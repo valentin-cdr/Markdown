@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Document;
+
+class HomeController extends Controller
+{
+    public function index(Request $request)
+    {
+        $tab = $request->input('tab', 'my_documents'); 
+        $search = $request->input('search');
+        $selectedTags = (array) $request->input('tags', []);
+        
+        $groups = session('keycloak_groups', []);
+        $isRetd = in_array('retd', $groups);
+
+        $selectedFolder = $request->input('folder');
+
+        // --------------------------------------------------------
+        // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
+        // --------------------------------------------------------
+        if ($tab === 'shared') {
+            $query = auth()->user()->sharedDocuments()
+                ->with('user')
+                ->orderBy('documents.updated_at', 'desc'); 
+                
+        } elseif ($tab === 'all' && $isRetd) {
+            $query = \App\Models\Document::with('user')
+                ->withCount('sharedWith')
+                ->orderBy('documents.updated_at', 'desc');
+                
+        } else {
+            $tab = 'my_documents'; 
+            $query = auth()->user()->documents()
+                ->withCount('sharedWith')
+                ->orderBy('documents.updated_at', 'desc'); 
+        }
+
+        // --------------------------------------------------------
+        // ÉTAPE 2 : 🚀 LOGIQUE DE RECHERCHE TEXTUELLE
+        // --------------------------------------------------------
+        if (!empty($search)) {
+            // 📄 On n'applique le filtre SQL QUE si on n'est PAS à la racine de l'onglet Global
+            // Car à la racine, on veut filtrer le NOM des dossiers après le regroupement !
+            if (!($tab === 'all' && empty($selectedFolder))) {
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                      ->orWhere('content', 'like', '%' . $search . '%');
+                });
+            }
+        }
+
+        // --------------------------------------------------------
+        // ÉTAPE 3 : EXTRACTION DES TAGS (AVANT DE LES FILTRER)
+        // --------------------------------------------------------
+        $tagsQuery = clone $query;
+        $allTagsCollection = $tagsQuery->pluck('tags')->filter()->flatten();
+        
+        $allTags = $allTagsCollection->unique()->values()->sort();
+        $tagsWithCount = array_count_values($allTagsCollection->toArray());
+        arsort($tagsWithCount); 
+        
+        $maxTags = 10;
+        
+        $popularUnselected = collect(array_keys($tagsWithCount))
+            ->diff($selectedTags)
+            ->take(max(0, $maxTags - count($selectedTags)))
+            ->toArray();
+
+        $pillsTags = array_merge($selectedTags, $popularUnselected);
+
+        // --------------------------------------------------------
+        // ÉTAPE 4 : APPLICATION DU FILTRE DES TAGS SÉLECTIONNÉS
+        // --------------------------------------------------------
+        if (!empty($selectedTags)) {
+            $query->where(function($q) use ($selectedTags) {
+                foreach ($selectedTags as $t) {
+                    $q->orWhereJsonContains('tags', $t);
+                }
+            });
+        }
+
+        // --------------------------------------------------------
+        // ÉTAPE 5 : RÉCUPÉRATION FINALE DES DONNÉES
+        // --------------------------------------------------------
+        if ($tab === 'all' && $isRetd) {
+            
+            if (!empty($selectedFolder)) {
+                
+                // Le dossier spécial qui affiche TOUT
+                if ($selectedFolder === 'ALL_DOCS') {
+                    $documentsToDisplay = $query->paginate(12)->withQueryString();
+                } 
+                else {
+                    // Vue Intérieure : Filtrage normal
+                    $allDocs = $query->get();
+
+                    $folderDocs = $allDocs->filter(function($doc) use ($selectedFolder) {
+                        $groupName = $doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE';
+                        return strtoupper(trim($groupName)) === strtoupper(trim($selectedFolder));
+                    })->values();
+
+                    $perPage = 12;
+                    $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+                    $items = $folderDocs->slice(($page - 1) * $perPage, $perPage)->values();
+
+                    $documentsToDisplay = new \Illuminate\Pagination\LengthAwarePaginator(
+                        $items,
+                        $folderDocs->count(),
+                        $perPage,
+                        $page,
+                        [
+                            'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+                            'query' => $request->query() 
+                        ]
+                    );
+                }
+
+            } else {
+                // 📁 VUE RACINE : On regroupe d'abord tous les documents par Dossier (Nom du groupe)
+                $groupedDocs = $query->get()->groupBy(function($doc) {
+                    return strtoupper($doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE');
+                });
+
+                // 🚀 LE FILTRE SUR LE NOM DES DOSSIERS ICI : On filtre les clés du groupe PHP !
+                if (!empty($search)) {
+                    $groupedDocs = $groupedDocs->filter(function($groupDocs, $groupName) use ($search) {
+                        return str_contains(strtolower($groupName), strtolower($search));
+                    });
+                }
+
+                $documentsToDisplay = $groupedDocs;
+            }
+            
+        } else {
+            $documentsToDisplay = $query->paginate(12)->withQueryString();
+        }
+
+        return view('home', [
+            'documents' => $documentsToDisplay,
+            'tab' => $tab,
+            'search' => $search,
+            'selectedTags' => $selectedTags,
+            'pillsTags' => $pillsTags,
+            'allTags' => $allTags,
+            'selectedFolder' => $selectedFolder,
+        ]);
+    }
+}
