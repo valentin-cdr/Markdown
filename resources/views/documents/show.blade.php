@@ -6,9 +6,6 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css" />
     
     <style>
-        /* ========================================================
-           📦 STRUCTURE ET MASQUAGE (Pour la lecture seule)
-           ======================================================== */
         .toastui-editor-defaultUI {
             border-radius: 0.75rem !important;
             border: 1px solid #e5e7eb !important;
@@ -16,80 +13,244 @@
             overflow: hidden;
             box-shadow: none !important;
         }
-        .dark .toastui-editor-defaultUI { border-color: #374151 !important; }
-
-        /* On cache les éléments de l'éditeur qui ne servent pas en lecture */
-        .toastui-editor-defaultUI .toastui-editor-toolbar,
-        .toastui-editor-defaultUI .toastui-editor-tabs,
+        .dark .toastui-editor-defaultUI {
+            border-color: #374151 !important; 
+        }
+        
         .toastui-editor-defaultUI .toastui-editor-status-bar {
             display: none !important;
         }
 
         .toastui-editor-defaultUI .ProseMirror h1,
-        .toastui-editor-defaultUI .ProseMirror h2 {
+        .toastui-editor-defaultUI .ProseMirror h2,
+        .toastui-editor-contents h1,
+        .toastui-editor-contents h2 {
             border-bottom: none !important;
             padding-bottom: 0 !important;
         }
-        .toastui-editor-defaultUI .ProseMirror { min-height: 400px !important; }
 
-        /* ========================================================
-           🎨 COULEURS CLAIR / SOMBRE (Pour la transition)
-           ======================================================== */
-        /* --- MODE CLAIR --- */
+        .toastui-editor-defaultUI .ProseMirror,
+        .toastui-editor-contents {
+            min-height: 400px !important;
+            padding: 2rem !important; /* 🚀 On ajoute l'espace intérieur (marges) */
+        }
+
+        .toastui-editor-defaultUI .toastui-editor-tabs {
+            height: 34px !important; 
+            line-height: 34px !important;
+        }
+        .toastui-editor-defaultUI .toastui-editor-tabs .tab-item {
+            height: 34px !important; 
+            line-height: 34px !important;
+            padding: 0 16px !important; 
+        }
+
         .toastui-editor-defaultUI,
         .toastui-editor-defaultUI .toastui-editor-main,
-        .toastui-editor-defaultUI .toastui-editor-ww-container {
+        .toastui-editor-defaultUI .toastui-editor-ww-container,
+        .toastui-editor-defaultUI .toastui-editor-md-container,
+        .toastui-editor-defaultUI .toastui-editor-md-preview {
             background-color: #ffffff !important;
         }
-        .toastui-editor-defaultUI .ProseMirror { color: #111827 !important; }
-        .toastui-editor-defaultUI .ProseMirror strong { font-weight: 800 !important; color: #000000 !important; }
+        .toastui-editor-defaultUI .toastui-editor-toolbar,
+        .toastui-editor-defaultUI .toastui-editor-tabs {
+            background-color: #f9fafb !important;
+            border-bottom-color: #e5e7eb !important;
+        }
+        .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
+            background-color: #ffffff !important;
+            color: #4f46e5 !important;
+        }
+        .toastui-editor-defaultUI .ProseMirror,
+        .toastui-editor-contents {
+            color: #111827 !important;
+        }
 
-        /* --- MODE SOMBRE --- */
+        .toastui-editor-defaultUI .ProseMirror strong,
+        .toastui-editor-contents strong,
+        .toastui-editor-defaultUI .toastui-editor-md-strong {
+            font-weight: 800 !important;
+            color: #000000 !important;
+        }
+
         .dark .toastui-editor-defaultUI,
         .dark .toastui-editor-defaultUI .toastui-editor-main,
         .dark .toastui-editor-defaultUI .toastui-editor-ww-container,
-        .dark .toastui-editor-dark {
+        .dark .toastui-editor-defaultUI .toastui-editor-md-container,
+        .dark .toastui-editor-dark,
+        .dark .toastui-editor-defaultUI .toastui-editor-md-preview {
             background-color: #24292e !important; 
         }
-        .dark .toastui-editor-defaultUI .ProseMirror { color: #cbd5e1 !important; }
-        .dark .toastui-editor-defaultUI .ProseMirror h1,
-        .dark .toastui-editor-defaultUI .ProseMirror h2 { color: #f8fafc !important; }
-        .dark .toastui-editor-defaultUI .ProseMirror strong { font-weight: 800 !important; color: #ffffff !important; }
-        .dark .toastui-editor-defaultUI .ProseMirror a { color: #818cf8 !important; }
-
-        /* ========================================================
-           🎯 STYLE DES PUCES IMBRIQUÉES
-           ======================================================== */
-        .toastui-editor-defaultUI ul > li::marker { content: "• " !important; color: #4f46e5 !important; font-size: 1.2rem !important; }
-        .toastui-editor-defaultUI ul ul > li::marker { content: "◦ " !important; color: #0284c7 !important; font-size: 1.2rem !important; }
-        .toastui-editor-defaultUI ul ul ul > li::marker { content: "▪ " !important; color: #059669 !important; font-size: 1.1rem !important; }
-
-        .dark .toastui-editor-defaultUI ul > li::marker { color: #818cf8 !important; }
-        .dark .toastui-editor-defaultUI ul ul > li::marker { color: #38bdf8 !important; }
-        .dark .toastui-editor-defaultUI ul ul ul > li::marker { color: #34d399 !important; }
-
-        /* ========================================================
-           🔒 COMPORTEMENT ET SCROLLBARS DES BLOCS DE CODE
-           ======================================================== */
-        .ProseMirror { caret-color: transparent !important; outline: none !important; }
         
-        /* Supprime le bouton d'édition PHP */
-        .te-code-block-editor-toggle, .toastui-editor-popup { display: none !important; visibility: hidden !important; }
+        .dark .toastui-editor-defaultUI .toastui-editor-toolbar,
+        .dark .toastui-editor-defaultUI .toastui-editor-tabs {
+            background-color: #232428 !important;
+            border-bottom-color: #374151 !important;
+        }
 
-        /* Défilement des blocs de code */
-        .toastui-editor-defaultUI * { scrollbar-width: thin !important; scrollbar-color: #cbd5e1 transparent !important; }
-        .dark .toastui-editor-defaultUI * { scrollbar-color: #4b5563 transparent !important; }
-        .toastui-editor-defaultUI *::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
-        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb { background-color: #cbd5e1 !important; border-radius: 20px !important; }
-        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb { background-color: #4b5563 !important; }
-    
+        .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item {
+            color: #64748b !important; 
+            background-color: transparent !important;
+        }
+        .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
+            background-color: #24292e !important; 
+            color: #818cf8 !important; 
+        }
+
+        .dark .toastui-editor-defaultUI .toastui-editor-md-splitter {
+            background-color: #374151 !important;
+        }
+
+        .dark .toastui-editor-defaultUI .ProseMirror,
+        .dark .toastui-editor-contents {
+            color: #cbd5e1 !important; 
+        }
+        
+        .dark .toastui-editor-defaultUI .ProseMirror h1,
+        .dark .toastui-editor-defaultUI .ProseMirror h2,
+        .dark .toastui-editor-contents h1,
+        .dark .toastui-editor-contents h2 {
+            color: #f8fafc !important; 
+        }
+
+        .dark .toastui-editor-defaultUI .ProseMirror strong,
+        .dark .toastui-editor-contents strong,
+        .dark .toastui-editor-defaultUI .toastui-editor-md-strong {
+            font-weight: 800 !important;
+            color: #ffffff !important;
+        }
+
+        .dark .toastui-editor-defaultUI .toastui-editor-md-heading {
+            color: #f8fafc !important; 
+        }
+
+        .dark .toastui-editor-contents a,
+        .dark .toastui-editor-defaultUI .ProseMirror a,
+        .dark .toastui-editor-defaultUI .toastui-editor-md-meta { 
+            color: #818cf8 !important; 
+        }
+
+        .force-tui-split-width {
+            max-width: 80rem !important; 
+        }
+
+        .toastui-editor-defaultUI * {
+            scrollbar-width: thin !important;
+            scrollbar-color: #cbd5e1 transparent !important;
+        }
+        .dark .toastui-editor-defaultUI * {
+            scrollbar-color: #4b5563 transparent !important;
+        }
+
+        .toastui-editor-defaultUI *::-webkit-scrollbar {
+            width: 6px !important;
+            height: 6px !important;
+        }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-track {
+            background: transparent !important;
+        }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1 !important;
+            border-radius: 20px !important;
+        }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover {
+            background-color: #9ca3af !important;
+        }
+
+        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb {
+            background-color: #4b5563 !important;
+        }
+        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover {
+            background-color: #6b7280 !important;
+        }
+
+        .toastui-editor-defaultUI ul > li::marker,
+        .toastui-editor-contents ul > li::marker {
+            content: "• " !important;
+            color: #4f46e5 !important;
+            font-size: 1.2rem !important;
+        }
+        .toastui-editor-defaultUI ul ul > li::marker,
+        .toastui-editor-contents ul ul > li::marker {
+            content: "◦ " !important;
+            color: #0284c7 !important;
+            font-size: 1.2rem !important;
+        }
+        .toastui-editor-defaultUI ul ul ul > li::marker,
+        .toastui-editor-contents ul ul ul > li::marker {
+            content: "▪ " !important;
+            color: #059669 !important;
+            font-size: 1.1rem !important;
+        }
+
+        .dark .toastui-editor-defaultUI ul > li::marker,
+        .dark .toastui-editor-contents ul > li::marker {
+            content: "• " !important;
+            color: #818cf8 !important;
+            font-size: 1.2rem !important;
+        }
+        .dark .toastui-editor-defaultUI ul ul > li::marker,
+        .dark .toastui-editor-contents ul ul > li::marker {
+            content: "◦ " !important;
+            color: #38bdf8 !important;
+            font-size: 1.2rem !important;
+        }
+        .dark .toastui-editor-defaultUI ul ul ul > li::marker,
+        .dark .toastui-editor-contents ul ul ul > li::marker {
+            content: "▪ " !important;
+            color: #34d399 !important;
+            font-size: 1.1rem !important;
+        }
+
+        .tag-selected {
+            background-color: #e0e7ff !important;
+            color: #4338ca !important;
+            border-color: #a5b4fc !important;
+        }
+
+        .dark .tag-selected {
+            background-color: rgba(99, 102, 241, 0.20) !important;
+            color: #a5b4fc !important;
+            border-color: #6366f1 !important;
+        }
+
+        /* --- Barre de défilement sur mesure pour les tags --- */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .dark .custom-scrollbar {
+            scrollbar-color: #475569 transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569; 
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #64748b; 
+        }
+
         /* ========================================================
            🛑 VERROUILLAGE DES CASES À COCHER (MODE VIEWER)
            ======================================================== */
         /* On remet un curseur de texte normal sur toute la ligne */
-        .toastui-editor-contents .task-list-item {
+        .toastui-editor-contents .task-list-item { 
             cursor: text !important; 
         }
+        
         /* On désactive totalement la case pour la souris */
         .toastui-editor-contents input[type="checkbox"],
         .toastui-editor-contents .task-list-item-checkbox {
@@ -116,7 +277,7 @@
 
         <div class="mb-6">
             <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Contenu</label>
-            <div id="editor-container" class="bg-white dark:bg-gray-900 rounded-xl"></div>
+            <div id="editor-container" class="toastui-editor-defaultUI bg-white dark:bg-[#24292e] w-full"></div>
             <input type="hidden" id="hidden-content" value="{{ $document->content }}">
         </div>
 
