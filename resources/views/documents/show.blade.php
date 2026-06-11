@@ -86,7 +86,13 @@
         /* ========================================================
            🛑 VERROUILLAGE DES CASES À COCHER (MODE VIEWER)
            ======================================================== */
-        .toastui-editor-contents input[type="checkbox"] {
+        /* On remet un curseur de texte normal sur toute la ligne */
+        .toastui-editor-contents .task-list-item {
+            cursor: text !important; 
+        }
+        /* On désactive totalement la case pour la souris */
+        .toastui-editor-contents input[type="checkbox"],
+        .toastui-editor-contents .task-list-item-checkbox {
             pointer-events: none !important;
             cursor: default !important;
         }
@@ -134,8 +140,7 @@
         let isDark = document.documentElement.classList.contains('dark');
         const container = document.getElementById('editor-container');
         
-        // 🚀 LA MAGIE EST ICI : On utilise "toastui.Editor.factory" avec "viewer: true"
-        // Cela génère EXACTEMENT le mode "Aperçu" de ton éditeur !
+        // 🚀 INITIALISATION EN MODE VIEWER
         const viewer = toastui.Editor.factory({
             el: container,
             viewer: true, 
@@ -148,18 +153,67 @@
             container.classList.add('toastui-editor-dark');
         }
 
+        // ========================================================
+        // 🛑 L'ARME FATALE : LE GARDIEN (MutationObserver)
+        // ========================================================
+        // Toast UI génère son HTML de manière asynchrone. Ce gardien surveille 
+        // l'apparition des cases à cocher et les verrouille instantanément.
+        const observer = new MutationObserver(function(mutations) {
+            container.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
+                // 1. On bloque l'état (grisé)
+                checkbox.setAttribute('disabled', 'disabled');
+                
+                // 2. On désactive les événements JavaScript de Toast UI
+                checkbox.onclick = function(e) {
+                    e.preventDefault();
+                    return false;
+                };
+            });
+        });
+
+        // On active le gardien sur l'éditeur
+        observer.observe(container, { childList: true, subtree: true });
+        
+        // Sécurité supplémentaire : on lance un verrouillage manuel rapide
+        setTimeout(() => {
+            container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.setAttribute('disabled', 'disabled');
+            });
+        }, 150);
+
         // 🚀 L'ÉCOUTEUR DE THÈME
         window.addEventListener('theme-changed', function(e) {
             let isDarkTheme = e.detail.theme === 'dark';
             
             if (isDarkTheme) {
                 container.classList.add('toastui-editor-dark');
-                // L'objet viewer permet aussi de forcer le recalcul des couleurs
                 if (viewer.setTheme) viewer.setTheme('dark');
             } else {
                 container.classList.remove('toastui-editor-dark');
                 if (viewer.setTheme) viewer.setTheme('light');
             }
+        });
+
+        // ========================================================
+        // 🛑 BLOCAGE ABSOLU DES CLICS SUR LES CHECKBOXES
+        // ========================================================
+        // On intercepte mousedown, mouseup et click AVANT Toast UI (grâce au "true")
+        ['mousedown', 'mouseup', 'click'].forEach(eventName => {
+            container.addEventListener(eventName, function(e) {
+                // Si l'utilisateur clique sur une case à cocher
+                if (e.target.tagName.toLowerCase() === 'input' || e.target.type === 'checkbox') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+                
+                // Si Toast UI tente de capter le clic sur le début de la ligne (la puce)
+                if (e.target.classList.contains('task-list-item') && e.offsetX < 30) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
         });
     });
 </script>
