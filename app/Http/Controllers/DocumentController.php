@@ -41,7 +41,17 @@ class DocumentController extends Controller
     }
 
     public function edit(Document $document) {
-        if (!$this->canEditDocument($document)) abort(403, 'Action non autorisée.');
+        $document = Document::findOrFail($document->id);
+
+        // 🛡️ SÉCURITÉ : Si l'utilisateur n'est pas le propriétaire 
+        // ET qu'il n'a pas reçu le droit d'édition (via la table pivot)
+        $isOwner = $document->user_id === auth()->id();
+        $canEditShared = $document->sharedWith()->where('user_id', auth()->id())->where('can_edit', true)->exists();
+
+        if (!$isOwner && !$canEditShared) {
+            // 🚀 Au lieu d'un abort(403), on redirige proprement avec un message flash !
+            return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
+        }
         
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
@@ -110,8 +120,15 @@ class DocumentController extends Controller
             'content' => $request->content,
             'tags' => empty($tagsArray) ? null : array_values($tagsArray),
         ]);
+        // ... tout ton code d'enregistrement (sauvegarde du texte, des tags, etc.) ...
+    
+        $document->save();
 
-        return redirect()->route('home')->with('success', 'Document mis à jour avec succès !');
+        // 🚀 REDIRECTION INTELLIGENTE SELON LE PROPRIÉTAIRE
+        $tab = ($document->user_id === auth()->id()) ? 'my_documents' : 'shared';
+
+        return redirect()->route('home', ['tab' => $tab])
+                        ->with('success', 'Document mis à jour avec succès.');
     }
 
     public function destroy(Document $document) {
@@ -121,6 +138,22 @@ class DocumentController extends Controller
     }
 
     public function show(Document $document) {
+
+        $document = Document::findOrFail($document->id);
+
+        // 🛡️ SÉCURITÉ : L'utilisateur doit être le propriétaire 
+        // OU le document doit lui avoir été partagé (présent dans la table pivot)
+        $isOwner = $document->user_id === auth()->id();
+        $isSharedWithMe = $document->sharedWith()->where('user_id', auth()->id())->exists();
+
+        // 🚀 Cas particulier : si tu as un rôle global ou un groupe spécifique (ex: R&D) 
+        // qui a le droit de TOUT voir dans l'onglet "All", tu peux ajouter cette condition :
+        $isRetdGroup = in_array('retd', session('keycloak_groups', []));
+
+        if (!$isOwner && !$isSharedWithMe && !$isRetdGroup) {
+            // Redirection vers la bibliothèque avec le message d'erreur qu'on a configuré sur l'accueil
+            return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation d'accéder à ce document.");
+        }
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
         

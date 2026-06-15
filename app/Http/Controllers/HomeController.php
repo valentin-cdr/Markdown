@@ -57,8 +57,29 @@ class HomeController extends Controller
         // ÉTAPE 3 : EXTRACTION DES TAGS (AVANT DE LES FILTRER)
         // --------------------------------------------------------
         $tagsQuery = clone $query;
-        $allTagsCollection = $tagsQuery->pluck('tags')->filter()->flatten();
+        $allTagsDocs = $tagsQuery->get();
+
+        // 1. On filtre les documents selon le dossier (si on est dedans)
+        if ($tab === 'all' && !empty($selectedFolder) && $selectedFolder !== 'ALL_DOCS') {
+            $allTagsDocs = $allTagsDocs->filter(function($doc) use ($selectedFolder) {
+                $groupName = $doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE';
+                return strtoupper(trim($groupName)) === strtoupper(trim($selectedFolder));
+            });
+        }
+
+        // 🚀 2. EXTRACTION ROBUSTE DES TAGS (Anti-bug de format)
+        $allTagsCollection = collect();
+        foreach ($allTagsDocs as $doc) {
+            // On vérifie si les tags sont en texte brut (JSON) ou déjà en tableau
+            $tags = is_string($doc->tags) ? json_decode($doc->tags, true) : $doc->tags;
+            
+            // Si c'est bien un tableau et qu'il n'est pas vide, on l'ajoute à notre collection
+            if (is_array($tags) && !empty($tags)) {
+                $allTagsCollection = $allTagsCollection->merge($tags);
+            }
+        }
         
+        // 3. Tri et comptage
         $allTags = $allTagsCollection->unique()->values()->sort();
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
         arsort($tagsWithCount); 

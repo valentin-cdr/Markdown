@@ -247,6 +247,10 @@
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: #64748b; 
         }
+        /* 🚀 ASTUCE VISUELLE : Cache les pilules au-delà de la 10ème */
+        #pills-container .tag-btn:nth-child(n+11) {
+            display: none !important;
+        }
     </style>
 @endsection
 
@@ -282,11 +286,26 @@
             <input type="hidden" name="cancel_url" value="{{ $cancelUrl }}">
             @if($document) @method('PUT') @endif
             
+            {{-- En-tête de l'éditeur : Titre à gauche, Auteur en haut à droite --}}
             <div class="mb-5">
-                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Titre du document</label>
-                <input type="text" name="title" value="{{ old('title', $document->title ?? '') }}" class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 p-3.5 border text-xl font-bold transition-colors" placeholder="Nom du fichier...">
-            </div>
+                
+                {{-- Ligne 1 : Les textes (Label à gauche, Auteur à droite) --}}
+                <div class="flex justify-between items-baseline mb-2">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Titre du document</label>
+                    
+                    @if(isset($document) && $document->user && $document->user_id !== auth()->id())
+                        <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                            Partagé par {{ $document->user->name }}
+                        </p>
+                    @endif
+                </div>
 
+                {{-- Ligne 2 : Le champ de saisie (prend 100% de la largeur) --}}
+                <input type="text" name="title" value="{{ old('title', $document->title ?? '') }}" 
+                    class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 p-3.5 border text-xl font-bold transition-colors" 
+                    placeholder="Nom du fichier...">
+                    
+            </div>
             {{-- 🚀 LA NOUVELLE ZONE DES TAGS --}}
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tags du document</label>
@@ -328,7 +347,6 @@
                                 {{-- 🚀 Empêche la soumission du formulaire principal avec onkeydown --}}
                                 <input type="text" id="tag-search-input" onkeydown="if(event.key==='Enter') event.preventDefault();" onkeyup="filterDropdownTags(event)" placeholder="Chercher ou créer..." 
                                        class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
-                                <p class="text-[10px] text-gray-400 mt-1 px-1">Appuyez sur Entrée pour créer</p>
                             </div>
                             
                             <div class="max-h-60 overflow-y-auto custom-scrollbar py-1" id="tag-dropdown-list">
@@ -407,9 +425,17 @@
         let isSelected = false;
 
         // 1. Ajouter/Retirer du formulaire
+        // 1. Ajouter/Retirer du formulaire
         if (existingInput) {
             existingInput.remove(); 
         } else {
+            // 🛑 SÉCURITÉ : VÉRIFICATION DES 10 TAGS MAX
+            const currentTagsCount = document.querySelectorAll('input[name="tags[]"]').length;
+            if (currentTagsCount >= 10) {
+                alert("Vous ne pouvez sélectionner que 10 tags au maximum !");
+                return; // On stoppe la fonction ici, le tag ne se coche pas
+            }
+
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'tags[]';
@@ -421,36 +447,61 @@
 
         let buttons = document.querySelectorAll(`.tag-btn[data-tag="${tagName}"]`);
         
-        // 🚀 Si le bouton n'existe pas (nouveau tag créé par l'utilisateur !), on le dessine !
-        if (buttons.length === 0 && isSelected) {
-            const pillsContainer = document.getElementById('pills-container');
+        // ========================================================
+        // 🚀 CORRECTION : VÉRIFICATION SPÉCIFIQUE POUR LA BARRE DU HAUT
+        // ========================================================
+        const pillsContainer = document.getElementById('pills-container');
+        // On cherche si la pilule existe DANS le container du haut
+        let pillExists = pillsContainer.querySelector(`.tag-btn[data-tag="${tagName}"]`);
+
+        // Si la pilule n'existe pas dans la barre du haut et qu'on a cliqué dessus, on la crée de force !
+        if (!pillExists && isSelected) {
             const newBtn = document.createElement('button');
             newBtn.type = 'button';
-            newBtn.className = 'tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs border transition-colors focus:outline-none flex items-center space-x-1 tag-selected font-semibold';
+            newBtn.className = 'tag-btn'; // On lui donne juste la classe de base, le script d'en dessous fera le design
             newBtn.setAttribute('data-tag', tagName);
             newBtn.onclick = () => toggleEditorTag(tagName);
-            newBtn.innerHTML = `<span>${tagName}</span> <svg class="h-3 w-3 ml-1 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>`;
-            pillsContainer.appendChild(newBtn);
-            buttons = [newBtn]; // On l'ajoute à notre liste pour l'animer juste en dessous
+            pillsContainer.prepend(newBtn); // On le met tout à gauche directement
+            
+            // 🔄 Très important : on rafraîchit notre liste de boutons pour inclure le petit nouveau !
+            buttons = document.querySelectorAll(`.tag-btn[data-tag="${tagName}"]`);
         }
 
+        // ========================================================
         // 2. Mettre à jour visuellement les boutons
+        // ========================================================
         buttons.forEach(btn => {
+            
+            const isDropdownItem = btn.closest('#tag-dropdown-list') !== null;
+
             if (isSelected) {
-                btn.classList.add('tag-selected', 'font-semibold');
-                btn.classList.remove('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'hover:bg-gray-200');
-                if (btn.querySelector('span:not(.tag-name)')) {
-                    btn.innerHTML = `<span>${tagName}</span> <svg class="h-3 w-3 ml-1 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>`;
-                } else if (btn.querySelector('.tag-name')) {
+                if (isDropdownItem) {
+                    // 🔵 DESIGN MENU DÉROULANT (SÉLECTIONNÉ)
+                    btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold transition-colors focus:outline-none';
                     btn.innerHTML = `<span class="tag-name">${tagName}</span> <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                } else {
+                    // 🔵 DESIGN PILULE HAUT (SÉLECTIONNÉ)
+                    btn.className = 'tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-medium border transition-colors focus:outline-none flex items-center space-x-1 tag-selected';
+                    btn.innerHTML = `<span>${tagName}</span> <svg class="h-3 w-3 ml-1 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                    
+                    // On téléporte le bouton au début de la liste
+                    const container = btn.parentNode;
+                    container.prepend(btn);
+                    container.scrollTo({ left: 0, behavior: 'smooth' });
                 }
             } else {
-                btn.classList.remove('tag-selected', 'font-semibold');
-                btn.classList.add('bg-gray-100', 'text-gray-700', 'dark:bg-gray-700', 'hover:bg-gray-200');
-                if (btn.querySelector('span:not(.tag-name)')) {
-                    btn.innerHTML = `<span>+ ${tagName}</span>`;
-                } else if (btn.querySelector('.tag-name')) {
+                if (isDropdownItem) {
+                    // ⚪ DESIGN MENU DÉROULANT (NON SÉLECTIONNÉ)
+                    btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none';
                     btn.innerHTML = `<span class="tag-name">${tagName}</span>`;
+                } else {
+                    // ⚪ DESIGN PILULE HAUT (NON SÉLECTIONNÉ)
+                    btn.className = 'tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-medium border transition-colors focus:outline-none flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600';
+                    btn.innerHTML = `<span>+ ${tagName}</span>`;
+                    
+                    // S'il est décoché, on le renvoie à la fin de la file
+                    const container = btn.parentNode;
+                    container.appendChild(btn);
                 }
             }
         });

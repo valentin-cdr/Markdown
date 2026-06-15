@@ -57,7 +57,7 @@
         
         <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
 
-            <form id="search-form" method="GET" action="{{ route('home') }}" class="w-full sm:w-64 m-0">
+           <form id="search-form" method="GET" action="{{ route('home') }}" class="w-full sm:w-64 m-0">
                 <input type="hidden" name="tab" value="{{ $tab }}">
                 
                 @if(!empty($selectedFolder))
@@ -68,16 +68,29 @@
                 @endforeach
 
                 <div class="relative flex items-center">
+                    {{-- Icône Loupe --}}
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                         </svg>
                     </div>
+                    
+                    {{-- Champ de recherche (on a changé pr-3 en pr-10 pour laisser la place à la croix) --}}
                     <input type="text" id="search-input" name="search" value="{{ $search ?? '' }}" 
-                           class="block w-full h-10 pl-9 pr-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors shadow-sm" 
-                           
-                           {{-- 🚀 LE TEXTE S'ADAPTE AUTOMATIQUEMENT --}}
+                           class="block w-full h-10 pl-9 pr-10 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors shadow-sm" 
                            placeholder="{{ ($tab === 'all' && empty($selectedFolder)) ? 'Rechercher un dossier...' : 'Rechercher un document...' }}">
+
+                    {{-- 🚀 NOUVEAU : La croix pour effacer (visible seulement si une recherche est en cours) --}}
+                    @if(!empty($search))
+                        <button type="button" 
+                                onclick="document.getElementById('search-input').value=''; document.getElementById('search-form').submit();" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors focus:outline-none"
+                                title="Effacer la recherche">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    @endif
                 </div>
             </form>
 
@@ -112,6 +125,31 @@
         </div>
     @endif
 
+    {{-- 🚨 NOUVEAU : BLOC D'AFFICHAGE DES ERREURS DE REDIRECTION --}}
+    @if(session('error'))
+        <div class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl shadow-sm transition-colors duration-200">
+            <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
+        </div>
+    @endif
+
+    {{-- 🚀 NOUVEAU PLACEMENT : EN-TÊTE DU DOSSIER (Visible seulement si on est dans un dossier) --}}
+    @if($tab === 'all' && !empty($selectedFolder))
+        <div class="mb-4 mt-2 flex items-center space-x-4 animate-fade-in-down">
+            <a href="{{ route('home', ['tab' => 'all']) }}" 
+               class="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm transition-all hover:-translate-x-1" title="Retour aux dossiers">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                <svg class="w-8 h-8 mr-3 text-indigo-500 drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>
+                {{ $selectedFolder === 'ALL_DOCS' ? 'Tous les fichiers' : $selectedFolder }}
+            </h3>
+        </div>
+    @endif
+
     {{-- 🚀 LA BOÎTE DES TAGS : VISIBLE PARTOUT SAUF SUR LA RACINE DES DOSSIERS --}}
     @if($tab !== 'all' || !empty($selectedFolder))
         @if(!empty($allTags) && count($allTags) > 0)
@@ -138,40 +176,45 @@
                     @endforeach
                 </div>
 
-                {{-- 2. Le menu déroulant "Chercher un tag" --}}
-                <div class="relative shrink-0">
-                    <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap px-3 py-1 rounded-md text-xs font-medium bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-500 hover:text-indigo-600 transition-colors flex items-center shadow-sm">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        Tous les tags
-                    </button>
+                {{-- 🚀 MODIFICATION ICI : On cache le menu s'il y a 10 tags ou moins --}}
+                @if(count($allTags) > 10)
+                    {{-- 2. Le menu déroulant "Chercher un tag" --}}
+                    <div class="relative shrink-0">
+                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap px-3 py-1 rounded-md text-xs font-medium bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-500 hover:text-indigo-600 transition-colors flex items-center shadow-sm">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            Tous les tags
+                        </button>
 
-                    {{-- La boîte du menu --}}
-                    <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none overflow-hidden transition-all">
-                        <div class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                            <input type="text" id="tag-search-input" onkeyup="filterDropdownTags()" placeholder="Chercher un tag..." 
-                                class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
-                        </div>
-                        
-                        <div class="max-h-60 overflow-y-auto custom-scrollbar py-1" id="tag-dropdown-list">
-                            @foreach($allTags as $t)
-                                @php
-                                    $isActive = in_array($t, $selectedTags);
-                                    $newTags = $isActive ? array_diff($selectedTags, [$t]) : array_merge($selectedTags, [$t]);
-                                    
-                                    $routeParams = ['tab' => $tab, 'search' => $search, 'tags' => $newTags];
-                                    if (!empty($selectedFolder)) $routeParams['folder'] = $selectedFolder;
-                                @endphp
-                                <a href="{{ route('home', $routeParams) }}" 
-                                   class="tag-dropdown-item flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : '' }}">
-                                    <span class="tag-name">{{ $t }}</span>
-                                    @if($isActive)
-                                        <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                    @endif
-                                </a>
-                            @endforeach
+                        {{-- La boîte du menu --}}
+                        <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none overflow-hidden transition-all">
+                            <div class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                                <input type="text" id="tag-search-input" onkeyup="filterDropdownTags()" placeholder="Chercher un tag..." 
+                                    class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
+                            </div>
+                            
+                            <div class="max-h-60 overflow-y-auto custom-scrollbar py-1" id="tag-dropdown-list">
+                                @foreach($allTags as $t)
+                                    @php
+                                        $isActive = in_array($t, $selectedTags);
+                                        $newTags = $isActive ? array_diff($selectedTags, [$t]) : array_merge($selectedTags, [$t]);
+                                        
+                                        $routeParams = ['tab' => $tab, 'search' => $search, 'tags' => $newTags];
+                                        if (!empty($selectedFolder)) $routeParams['folder'] = $selectedFolder;
+                                    @endphp
+                                    <a href="{{ route('home', $routeParams) }}" 
+                                       class="tag-dropdown-item flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : '' }}">
+                                        <span class="tag-name">{{ $t }}</span>
+                                        @if($isActive)
+                                            <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
+                {{-- FIN DE LA MODIFICATION 🚀 --}}
+
             </div>
         @endif
     @endif
@@ -245,27 +288,9 @@
             @else
                 {{-- 📂 2. VUE "INTÉRIEUR" : CONTENU D'UN DOSSIER CLIQUÉ --}}
                 <div class="animate-fade-in-down">
-                    {{-- En-tête du dossier (Bouton retour + Titre) --}}
-                    <div class="mb-6 flex items-center space-x-4 border-b border-gray-100 dark:border-gray-700 pb-4">
-                        
-                        {{-- 🚀 CORRECTION : On retire search et les filtres pour revenir à la racine propre ! --}}
-                        <a href="{{ route('home', ['tab' => 'all']) }}" 
-                           class="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm transition-colors" title="Retour aux dossiers">
-                            
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </a>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                            </svg>
-                            {{ $selectedFolder === 'ALL_DOCS' ? 'Tous les fichiers' : $selectedFolder }}
-                        </h3>
-                    </div>
 
                     {{-- La grille des documents de CE dossier uniquement --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                         @foreach($documents as $doc)
                             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
                                 <div>
@@ -274,7 +299,7 @@
                                         <div class="flex flex-wrap gap-2 mb-2">
                                             @foreach($doc->tags as $t)
                                                 <a href="{{ route('home', ['tab' => $tab, 'tags' => [$t], 'folder' => $selectedFolder]) }}" 
-                                                class="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 transition-colors cursor-pointer">
+                                                class="inline-block mt-0.5 -ml-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 transition-colors cursor-pointer">
                                                     #{{ $t }}
                                                 </a>
                                             @endforeach
@@ -283,29 +308,33 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mt-2 transition-colors duration-200">{{ $doc->clean_preview }}</p>
                                 </div>
                                 <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3 mt-auto transition-colors duration-200">
+                                    {{-- 🕒 Date tout à gauche --}}
                                     <span class="text-xs text-gray-400">{{ $doc->updated_at->diffForHumans() }}</span>
-                                    <div class="flex space-x-2">
-                                        <div class="flex items-center space-x-2 mt-1">
-                                            @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
-                                                <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                                                    </svg>
-                                                    {{ $doc->shared_with_count }}
-                                                </span>
-                                            @endif
-                                        </div>
+                                    
+                                    {{-- 🎯 Auteur et Boutons à droite, strictement alignés --}}
+                                    <div class="flex items-center space-x-3">
+                                        @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
+                                            <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                                                </svg>
+                                                {{ $doc->shared_with_count }}
+                                            </span>
+                                        @endif
                                         
                                         @if($tab === 'my_documents')
-                                            <a href="{{ route('documents.share.form', $doc->id) }}" class="text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-1.5 px-3 rounded-lg transition">Partager</a>
-                                            <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition">Éditer</a>
+                                            <a href="{{ route('documents.share.form', $doc->id) }}" class="text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-1.5 px-3 rounded-lg transition flex items-center">Partager</a>
+                                            <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">Éditer</a>
                                         @else
-                                            <span class="text-xs text-indigo-400 mr-2">De : {{ $doc->user->username }}</span>
+                                            {{-- Le texte est centré verticalement par rapport au bouton --}}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
+                                                De : <strong class="ml-1 text-gray-700 dark:text-gray-300 font-medium">{{ $doc->user->username }}</strong>
+                                            </span>
 
                                             @if($doc->pivot?->can_edit)
-                                                <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 py-1.5 px-3 rounded-lg transition">Éditer</a>
+                                                <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
                                             @else
-                                                <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 py-1.5 px-3 rounded-lg transition">Consulter</a>
+                                                <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Consulter</a>
                                             @endif
                                         @endif
                                     </div>
@@ -321,50 +350,67 @@
 
         {{-- 🚀 SINON, AFFICHAGE NORMAL POUR LES AUTRES ONGLETS (Mes docs / Partagés) --}}
         @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                 @foreach($documents as $doc)
                     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
                         <div>
                             <h3 class="text-base font-bold text-gray-900 dark:text-white truncate transition-colors duration-200">{{ $doc->title }}</h3>
                             @if(!empty($doc->tags))
-                                <div class="flex flex-wrap gap-2 mb-2">
-                                    @foreach($doc->tags as $t)
-                                        <a href="{{ route('home', ['tab' => $tab, 'tags' => [$t]]) }}" 
-                                        class="inline-block px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 transition-colors cursor-pointer">
+                                @php
+                                    // On prend les 3 premiers tags seulement
+                                    $displayTags = array_slice($doc->tags, 0, 3);
+                                    // On calcule combien il en reste à cacher
+                                    $hiddenCount = count($doc->tags) - 3;
+                                @endphp
+                                
+                                <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                                    @foreach($displayTags as $t)
+                                        <a href="{{ route('home', ['tab' => $tab, 'tags' => [$t], 'folder' => $selectedFolder ?? null]) }}" 
+                                        class="inline-block mt-0.5 -ml-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 transition-colors cursor-pointer truncate max-w-[100px]">
                                             #{{ $t }}
                                         </a>
                                     @endforeach
+                                    
+                                    {{-- S'il y a plus de 3 tags, on affiche la pilule "+X" --}}
+                                    @if($hiddenCount > 0)
+                                        <span class="inline-block px-1.5 py-0.5 rounded-md text-[11px] font-semibold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 cursor-default">
+                                            +{{ $hiddenCount }}
+                                        </span>
+                                    @endif
                                 </div>
                             @endif
                             <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mt-2 transition-colors duration-200">{{ $doc->clean_preview }}</p>
                         </div>
                         
                         <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3 mt-auto transition-colors duration-200">
+                            {{-- 🕒 Date tout à gauche --}}
                             <span class="text-xs text-gray-400">{{ $doc->updated_at->diffForHumans() }}</span>
-                            <div class="flex space-x-2">
-                                <div class="flex items-center space-x-2 mt-1">
-                                    @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
-                                        <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors">
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                                            </svg>
-                                            {{ $doc->shared_with_count }}
-                                        </span>
-                                    @endif
-                                </div>
+                            
+                            {{-- 🎯 Auteur et Boutons à droite, strictement alignés --}}
+                            <div class="flex items-center space-x-3">
+                                @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
+                                    <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                                        </svg>
+                                        {{ $doc->shared_with_count }}
+                                    </span>
+                                @endif
                                 
                                 @if($tab === 'my_documents')
-                                    <a href="{{ route('documents.share.form', $doc->id) }}" class="text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-1.5 px-3 rounded-lg transition">Partager</a>
-                                    <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition">Éditer</a>
+                                    <a href="{{ route('documents.share.form', $doc->id) }}" class="text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-1.5 px-3 rounded-lg transition flex items-center">Partager</a>
+                                    <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">Éditer</a>
                                 @else
-                                    <span class="text-xs text-indigo-400 mr-2">De : {{ $doc->user->username }}</span>
+                                    {{-- Le texte est centré verticalement par rapport au bouton --}}
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
+                                        De : <strong class="ml-1 text-gray-700 dark:text-gray-300 font-medium">{{ $doc->user->username }}</strong>
+                                    </span>
 
                                     @if($doc->pivot?->can_edit)
-                                        <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 py-1.5 px-3 rounded-lg transition">Éditer</a>
+                                        <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
                                     @else
-                                        <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 py-1.5 px-3 rounded-lg transition">Consulter</a>
+                                        <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Consulter</a>
                                     @endif
-                                    
                                 @endif
                             </div>
                         </div>

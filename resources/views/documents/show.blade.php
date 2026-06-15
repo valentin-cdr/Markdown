@@ -269,10 +269,20 @@
 <main id="main-wrapper" class="max-w-6xl w-full mx-auto p-6 flex-1 transition-all duration-300">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
         
-        <div class="mb-5">
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Titre du document</label>
-            <h1 class="w-full text-gray-900 dark:text-white text-xl font-bold transition-colors">{{ $document->title }}</h1>
-            <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-2">Partagé par {{ $document->user->name }}</p>
+        {{-- En-tête : Titre à gauche, Auteur en haut à droite --}}
+        <div class="mb-5 flex justify-between items-start gap-4">
+            
+            {{-- BLOC GAUCHE : Label + Titre --}}
+            <div class="flex-1 min-w-0">
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Titre du document</label>
+                <h1 class="text-gray-900 dark:text-white text-xl font-bold transition-colors truncate">{{ $document->title }}</h1>
+            </div>
+
+            {{-- BLOC DROITE : Partagé par (Aligné en haut) --}}
+            <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap pt-0.5">
+                Partagé par {{ $document->user->name }}
+            </p>
+            
         </div>
 
         <div class="mb-6">

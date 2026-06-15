@@ -31,6 +31,60 @@
             transition-duration: 200ms !important;
             transition-timing-function: ease !important;
         }
+
+        /* ========================================================
+        🚀 STYLE ULTRA-MODERNE DES BARRES DE DÉFILEMENT GLOBALES
+        ======================================================== */
+
+        /* --- 1. COMPATIBILITÉ FIREFOX (Standard moderne) --- */
+        html, body, * {
+            scrollbar-width: thin !important; /* Barre fine */
+            scrollbar-color: #cbd5e1 transparent !important; /* Molette grise, fond invisible */
+            scroll-behavior: smooth; /* Défilement fluide natif partout ! */
+        }
+
+        /* Version Mode Sombre pour Firefox */
+        .dark, .dark * {
+            scrollbar-color: #4b5563 transparent !important; /* Molette plus sombre */
+        }
+
+        /* --- 2. COMPATIBILITÉ CHROME, SAFARI, EDGE (Webkit) --- */
+
+        /* Taille de la barre (Largeur pour verticale, Hauteur pour horizontale) */
+        ::-webkit-scrollbar {
+            width: 8px !important;
+            height: 8px !important;
+        }
+
+        /* Le fond de la barre (le rail) -> On le laisse invisible pour plus de légèreté */
+        ::-webkit-scrollbar-track {
+            background: transparent !important;
+        }
+
+        /* La molette (le petit pavé qui bouge) - MODE CLAIR */
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1 !important;
+            border-radius: 100px !important; /* Bords ultra-arrondis */
+            border: 2px solid transparent !important; /* Crée un petit espace interne discret */
+            background-clip: padding-box;
+        }
+
+        /* Au survol en Mode Clair -> Un poil plus foncé ou couleur Indigo de ton site */
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #4f46e5 !important; /* Devient Indigo au survol ! 🌟 */
+        }
+
+        /* La molette - MODE SOMBRE */
+        .dark ::-webkit-scrollbar-thumb {
+            background-color: #4b5563 !important;
+            border: 2px solid transparent !important;
+            background-clip: padding-box;
+        }
+
+        /* Au survol en Mode Sombre */
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background-color: #818cf8 !important; /* Indigo clair en mode sombre ! 🌟 */
+        }
     </style>
 
     @yield('styles')
