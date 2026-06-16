@@ -32,7 +32,7 @@
         .toastui-editor-defaultUI .ProseMirror,
         .toastui-editor-contents {
             min-height: 400px !important;
-            padding: 2rem !important; /* 🚀 On ajoute l'espace intérieur (marges) */
+            padding: 2rem !important;
         }
 
         .toastui-editor-defaultUI .toastui-editor-tabs {
@@ -243,9 +243,6 @@
             background-color: #64748b; 
         }
 
-        /* ========================================================
-           🛑 VERROUILLAGE DES CASES À COCHER (MODE VIEWER)
-           ======================================================== */
         /* On remet un curseur de texte normal sur toute la ligne */
         .toastui-editor-contents .task-list-item { 
             cursor: text !important; 
@@ -268,8 +265,7 @@
 @section('content')
 <main id="main-wrapper" class="max-w-6xl w-full mx-auto p-6 flex-1 transition-all duration-300">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
-        
-        {{-- En-tête : Titre à gauche, Auteur en haut à droite --}}
+
         <div class="mb-5 flex justify-between items-start gap-4">
             
             {{-- BLOC GAUCHE : Label + Titre --}}
@@ -324,9 +320,6 @@
             container.classList.add('toastui-editor-dark');
         }
 
-        // ========================================================
-        // 🛑 L'ARME FATALE : LE GARDIEN (MutationObserver)
-        // ========================================================
         // Toast UI génère son HTML de manière asynchrone. Ce gardien surveille 
         // l'apparition des cases à cocher et les verrouille instantanément.
         const observer = new MutationObserver(function(mutations) {
@@ -352,7 +345,7 @@
             });
         }, 150);
 
-        // 🚀 L'ÉCOUTEUR DE THÈME
+        // L'ÉCOUTEUR DE THÈME
         window.addEventListener('theme-changed', function(e) {
             let isDarkTheme = e.detail.theme === 'dark';
             
@@ -365,9 +358,6 @@
             }
         });
 
-        // ========================================================
-        // 🛑 BLOCAGE ABSOLU DES CLICS SUR LES CHECKBOXES
-        // ========================================================
         // On intercepte mousedown, mouseup et click AVANT Toast UI (grâce au "true")
         ['mousedown', 'mouseup', 'click'].forEach(eventName => {
             container.addEventListener(eventName, function(e) {

@@ -26,7 +26,7 @@ class DocumentController extends Controller
         $groups = session('keycloak_groups', []);
         $document = null;
         
-        // 🚀 CALCUL DES TAGS (Complet, Top 10, et Sélectionnés)
+        // CALCUL DES TAGS (Complet, Top 10, et Sélectionnés)
         $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
         $allTags = $allTagsCollection->unique()->values()->sort();
 
@@ -43,20 +43,20 @@ class DocumentController extends Controller
     public function edit(Document $document) {
         $document = Document::findOrFail($document->id);
 
-        // 🛡️ SÉCURITÉ : Si l'utilisateur n'est pas le propriétaire 
+        // Si l'utilisateur n'est pas le propriétaire 
         // ET qu'il n'a pas reçu le droit d'édition (via la table pivot)
         $isOwner = $document->user_id === auth()->id();
         $canEditShared = $document->sharedWith()->where('user_id', auth()->id())->where('can_edit', true)->exists();
 
         if (!$isOwner && !$canEditShared) {
-            // 🚀 Au lieu d'un abort(403), on redirige proprement avec un message flash !
+            // Au lieu d'un abort(403), on redirige proprement avec un message flash !
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
         }
         
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
         
-        // 🚀 CALCUL DES TAGS
+        // CALCUL DES TAGS
         $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
         $allTags = $allTagsCollection->unique()->values()->sort();
 
@@ -76,7 +76,7 @@ class DocumentController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'tags' => 'nullable|array' // 🚀 Changé de string à array
+            'tags' => 'nullable|array' // Changé de string à array
         ]);
 
         // Nettoyer les tags envoyés (retirer les espaces en trop et les tags vides)
@@ -110,7 +110,7 @@ class DocumentController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'tags' => 'nullable|array' // 🚀 Changé de string à array
+            'tags' => 'nullable|array' // Changé de string à array
         ]);
 
         $tagsArray = array_filter(array_map('trim', $request->tags ?? []));
@@ -120,11 +120,10 @@ class DocumentController extends Controller
             'content' => $request->content,
             'tags' => empty($tagsArray) ? null : array_values($tagsArray),
         ]);
-        // ... tout ton code d'enregistrement (sauvegarde du texte, des tags, etc.) ...
     
         $document->save();
 
-        // 🚀 REDIRECTION INTELLIGENTE SELON LE PROPRIÉTAIRE
+        // REDIRECTION INTELLIGENTE SELON LE PROPRIÉTAIRE
         $tab = ($document->user_id === auth()->id()) ? 'my_documents' : 'shared';
 
         return redirect()->route('home', ['tab' => $tab])
@@ -141,12 +140,12 @@ class DocumentController extends Controller
 
         $document = Document::findOrFail($document->id);
 
-        // 🛡️ SÉCURITÉ : L'utilisateur doit être le propriétaire 
+        // L'utilisateur doit être le propriétaire 
         // OU le document doit lui avoir été partagé (présent dans la table pivot)
         $isOwner = $document->user_id === auth()->id();
         $isSharedWithMe = $document->sharedWith()->where('user_id', auth()->id())->exists();
 
-        // 🚀 Cas particulier : si tu as un rôle global ou un groupe spécifique (ex: R&D) 
+        // si tu as un rôle global ou un groupe spécifique (ex: R&D) 
         // qui a le droit de TOUT voir dans l'onglet "All", tu peux ajouter cette condition :
         $isRetdGroup = in_array('retd', session('keycloak_groups', []));
 

@@ -25,7 +25,6 @@ class Document extends Model
     // Les utilisateurs avec qui le document est partagé
     public function sharedWith()
     {
-        // 👉 AJOUT : ->withPivot('can_edit')
         return $this->belongsToMany(User::class, 'document_user')
                     ->withPivot('can_edit')
                     ->withTimestamps();

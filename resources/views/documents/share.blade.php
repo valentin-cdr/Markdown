@@ -25,7 +25,7 @@
             <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition">Donner l'accès</button>
         </div>
         
-        <!-- 👉 Checkbox pour autoriser la modification -->
+        <!-- Checkbox pour autoriser la modification -->
         <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
             <input type="checkbox" name="can_edit" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800">
             <span>Autoriser cet utilisateur à modifier le document</span>
@@ -44,30 +44,24 @@
                 </div>
                 
                 <div class="flex items-center space-x-3 w-full sm:w-auto">
-                    <!-- 👉 Sélecteur de permission interactif (sauvegarde auto au clic) -->
+                    <!-- Sélecteur de permission interactif (sauvegarde auto au clic) -->
                     <form action="{{ route('documents.share.update', [$document->id, $guest->id]) }}" method="POST" class="m-0">
                         @csrf @method('PATCH')
                         <input type="hidden" name="can_edit" value="0">
                         
                         <label class="flex items-center cursor-pointer group select-none">
-                            
-                            {{-- 📖 Texte GAUCHE : Lecteur (S'illumine si désactivé) --}}
                             <span class="mr-3 text-sm transition-colors duration-300 {{ !$guest->pivot->can_edit ? 'text-gray-800 dark:text-gray-200 font-semibold' : 'text-gray-400 dark:text-gray-500' }}">
                                 Lecteur
                             </span>
 
-                            {{-- 🎚️ LE BOUTON SWITCH AU CENTRE --}}
                             <div class="relative">
                                 <input type="checkbox" name="can_edit" value="1" onchange="this.form.submit()" class="sr-only" {{ $guest->pivot->can_edit ? 'checked' : '' }}>
                                 
-                                {{-- Le fond du bouton --}}
                                 <div class="block w-10 h-6 rounded-full transition-colors duration-300 ease-in-out {{ $guest->pivot->can_edit ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-600' }}"></div>
                                 
-                                {{-- Le curseur blanc --}}
                                 <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ease-in-out shadow-sm {{ $guest->pivot->can_edit ? 'transform translate-x-4' : '' }}"></div>
                             </div>
                             
-                            {{-- ✍️ Texte DROITE : Éditeur (S'illumine si activé) --}}
                             <span class="ml-3 text-sm transition-colors duration-300 {{ $guest->pivot->can_edit ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-400 dark:text-gray-500' }}">
                                 Éditeur
                             </span>

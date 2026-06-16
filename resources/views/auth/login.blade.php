@@ -59,7 +59,7 @@
             </a>
         </div>
 
-        <!-- 👇 NOUVEAU : BOUTON DE TEST DÉVELOPPEUR 👇 -->
+        <!-- BOUTON DE TEST DÉVELOPPEUR -->
         @if(app()->environment('local'))
             <div class="mt-6 relative">
                 <div class="absolute inset-0 flex items-center">

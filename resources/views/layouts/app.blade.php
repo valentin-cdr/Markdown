@@ -33,7 +33,7 @@
         }
 
         /* ========================================================
-        🚀 STYLE ULTRA-MODERNE DES BARRES DE DÉFILEMENT GLOBALES
+        STYLE MODERNE DES BARRES DE DÉFILEMENT GLOBALES
         ======================================================== */
 
         /* --- 1. COMPATIBILITÉ FIREFOX (Standard moderne) --- */
@@ -104,7 +104,7 @@
         </div>
         
         <div class="flex items-center space-x-4">
-            <!-- BOUTON THEME SOMBRE / CLAIR AVEC NOUVELLES ICÔNES HEROICONS -->
+            <!-- BOUTON THEME SOMBRE / CLAIR AVEC ICÔNES HEROICONS -->
             <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none rounded-xl text-sm p-2 transition-all duration-300">
                 
                 <!-- Icône Lune (affichée en mode clair) -->
@@ -147,7 +147,7 @@
         var themeToggleBtn = document.getElementById('theme-toggle');
 
         themeToggleBtn.addEventListener('click', function() {
-        // ✅ Active les transitions sur TOUS les éléments
+        // Active les transitions sur TOUS les éléments
         document.documentElement.classList.add('theme-transitioning');
 
         themeToggleDarkIcon.classList.toggle('hidden');
@@ -163,7 +163,7 @@
             window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'dark' } }));
         }
 
-        // ✅ Retire la classe après l'animation (300ms > 200ms pour laisser finir)
+        // Retire la classe après l'animation (300ms > 200ms pour laisser finir)
         setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 300);
     });
     </script>

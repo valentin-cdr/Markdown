@@ -247,7 +247,7 @@
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: #64748b; 
         }
-        /* 🚀 ASTUCE VISUELLE : Cache les pilules au-delà de la 10ème */
+        /* ASTUCE VISUELLE : Cache les pilules au-delà de la 10ème */
         #pills-container .tag-btn:nth-child(n+11) {
             display: none !important;
         }
@@ -306,7 +306,7 @@
                     placeholder="Nom du fichier...">
                     
             </div>
-            {{-- 🚀 LA NOUVELLE ZONE DES TAGS --}}
+            {{-- ZONE DES TAGS --}}
             <div class="mb-4">
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tags du document</label>
                 
@@ -320,31 +320,36 @@
                 {{-- Conteneur Flex global (Tags + Bouton Menu) --}}
                 <div class="flex items-center gap-2 w-full">
                     
-                    {{-- 1. La barre défilante des Top Tags --}}
-                    <div id="pills-container" class="flex flex-nowrap overflow-x-auto gap-2 custom-scrollbar shrink pb-2 pt-1" style="scroll-behavior: smooth;">
-                        @foreach($pillsTags as $t)
-                            @php $isActive = in_array($t, $selectedTags); @endphp
-                            
-                            <button type="button" onclick="toggleEditorTag('{{ addslashes($t) }}')" data-tag="{{ $t }}"
-                               class="tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-medium border transition-colors focus:outline-none flex items-center space-x-1 {{ $isActive ? 'tag-selected font-semibold' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600' }}">
-                                <span>{{ $isActive ? '' : '+ ' }}{{ $t }}</span>
-                                @if($isActive)
-                                    <svg class="h-3 w-3 ml-1 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                                @endif
-                            </button>
-                        @endforeach
+                    {{-- 1. La barre défilante des Tags --}}
+                    <div class="flex-1 min-w-0">
+                        <div id="pills-container" class="flex flex-nowrap overflow-x-auto gap-2 custom-scrollbar pb-1 relative" style="scroll-behavior: smooth;">
+                            @foreach($pillsTags as $t)
+                                @php $isActive = in_array($t, $selectedTags); @endphp
+                                
+                                <button type="button" onclick="toggleEditorTag('{{ addslashes($t) }}')" data-tag="{{ $t }}"
+                                   class="tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none {{ $isActive ? 'tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80' : 'tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                                    
+                                    <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                    {{ $t }}
+                                    
+                                    @if($isActive)
+                                        <svg class="h-3 w-3 ml-1.5 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
 
-                    {{-- 2. Le menu déroulant "Chercher ou Créer un tag" --}}
+                    {{-- 2. Le menu déroulant "Tous les tags" --}}
                     <div class="relative shrink-0 pb-1">
-                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap px-3 py-1 rounded-md text-xs font-medium bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-300 transition-colors flex items-center shadow-sm">
-                            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            + Tags
+                        {{-- 🚀 LE BOUTON A ÉTÉ MIS À JOUR POUR ÊTRE IDENTIQUE À LA HOME PAGE --}}
+                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 border border-transparent text-gray-600 hover:bg-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:border-gray-700 transition-colors duration-200 focus:outline-none shadow-sm">
+                            <svg class="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            Tous les tags
                         </button>
 
                         <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none overflow-hidden transition-all">
                             <div class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                {{-- 🚀 Empêche la soumission du formulaire principal avec onkeydown --}}
                                 <input type="text" id="tag-search-input" onkeydown="if(event.key==='Enter') event.preventDefault();" onkeyup="filterDropdownTags(event)" placeholder="Chercher ou créer..." 
                                        class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
                             </div>
@@ -354,8 +359,13 @@
                                     @php $isActive = in_array($t, $selectedTags); @endphp
                                     
                                     <button type="button" onclick="toggleEditorTag('{{ addslashes($t) }}')" data-tag="{{ $t }}"
-                                       class="tag-btn w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 {{ $isActive ? 'tag-selected font-semibold' : '' }}">
-                                        <span class="tag-name">{{ $t }}</span>
+                                       class="tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm transition-colors focus:outline-none {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                        
+                                        <div class="flex items-center">
+                                            <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                            <span class="tag-name">{{ $t }}</span>
+                                        </div>
+                                        
                                         @if($isActive)
                                             <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                         @endif
@@ -425,11 +435,10 @@
         let isSelected = false;
 
         // 1. Ajouter/Retirer du formulaire
-        // 1. Ajouter/Retirer du formulaire
         if (existingInput) {
             existingInput.remove(); 
         } else {
-            // 🛑 SÉCURITÉ : VÉRIFICATION DES 10 TAGS MAX
+            // SÉCURITÉ : VÉRIFICATION DES 10 TAGS MAX
             const currentTagsCount = document.querySelectorAll('input[name="tags[]"]').length;
             if (currentTagsCount >= 10) {
                 alert("Vous ne pouvez sélectionner que 10 tags au maximum !");
@@ -448,7 +457,7 @@
         let buttons = document.querySelectorAll(`.tag-btn[data-tag="${tagName}"]`);
         
         // ========================================================
-        // 🚀 CORRECTION : VÉRIFICATION SPÉCIFIQUE POUR LA BARRE DU HAUT
+        // CORRECTION : VÉRIFICATION SPÉCIFIQUE POUR LA BARRE DU HAUT
         // ========================================================
         const pillsContainer = document.getElementById('pills-container');
         // On cherche si la pilule existe DANS le container du haut
@@ -476,38 +485,37 @@
 
             if (isSelected) {
                 if (isDropdownItem) {
-                    // 🔵 DESIGN MENU DÉROULANT (SÉLECTIONNÉ)
+                    // DESIGN MENU DÉROULANT (SÉLECTIONNÉ)
                     btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold transition-colors focus:outline-none';
-                    btn.innerHTML = `<span class="tag-name">${tagName}</span> <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                    btn.innerHTML = `<div class="flex items-center"><span class="text-indigo-400 dark:text-indigo-500 mr-1.5">#</span><span class="tag-name">${tagName}</span></div> <svg class="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
                 } else {
-                    // 🔵 DESIGN PILULE HAUT (SÉLECTIONNÉ)
-                    btn.className = 'tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-medium border transition-colors focus:outline-none flex items-center space-x-1 tag-selected';
-                    btn.innerHTML = `<span>${tagName}</span> <svg class="h-3 w-3 ml-1 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                    // DESIGN PILULE HAUT (SÉLECTIONNÉ)
+                    btn.className = 'tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80';
+                    btn.innerHTML = `<span class="text-indigo-400 dark:text-indigo-500 mr-1.5">#</span> ${tagName} <svg class="w-3 h-3 ml-1.5 text-indigo-500 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
                     
-                    // On téléporte le bouton au début de la liste
                     const container = btn.parentNode;
                     container.prepend(btn);
                     container.scrollTo({ left: 0, behavior: 'smooth' });
                 }
             } else {
                 if (isDropdownItem) {
-                    // ⚪ DESIGN MENU DÉROULANT (NON SÉLECTIONNÉ)
+                    // DESIGN MENU DÉROULANT (NON SÉLECTIONNÉ)
                     btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none';
-                    btn.innerHTML = `<span class="tag-name">${tagName}</span>`;
+                    btn.innerHTML = `<div class="flex items-center"><span class="text-gray-400 dark:text-gray-500 mr-1.5">#</span><span class="tag-name">${tagName}</span></div>`;
                 } else {
-                    // ⚪ DESIGN PILULE HAUT (NON SÉLECTIONNÉ)
-                    btn.className = 'tag-btn shrink-0 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-medium border transition-colors focus:outline-none flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600';
-                    btn.innerHTML = `<span>+ ${tagName}</span>`;
+                    // DESIGN PILULE HAUT (NON SÉLECTIONNÉ)
+                    btn.className = 'tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700';
+                    btn.innerHTML = `<span class="text-gray-400 dark:text-gray-500 mr-1.5">#</span> ${tagName}`;
                     
-                    // S'il est décoché, on le renvoie à la fin de la file
                     const container = btn.parentNode;
                     container.appendChild(btn);
                 }
             }
         });
+        setTimeout(updateEditorTagsVisibility, 50);
     }
 
-    // 🚀 FONCTION POUR LE MENU DÉROULANT ET LA CRÉATION DE NOUVEAUX TAGS
+    // FONCTION POUR LE MENU DÉROULANT ET LA CRÉATION DE NOUVEAUX TAGS
     function filterDropdownTags(e) {
         let input = document.getElementById('tag-search-input');
         let filter = input.value.toLowerCase().trim();
@@ -522,13 +530,13 @@
             }
         });
 
-        // 🚀 Si on appuie sur Entrée, on crée le tag et on vide la recherche !
+        // Si on appuie sur Entrée, on crée le tag et on vide la recherche
         if (e && e.key === 'Enter') {
             e.preventDefault(); 
             if (input.value.trim() !== '') {
                 toggleEditorTag(input.value.trim());
                 input.value = '';
-                filterDropdownTags(); // Réinitialise la liste
+                filterDropdownTags();
             }
         }
     }

@@ -64,7 +64,7 @@ if (app()->environment('local')) {
 
         Auth::login($testUser);
         
-        // 🚀 INJECTION DU GROUPE EN SESSION
+        // INJECTION DU GROUPE EN SESSION
         session(['keycloak_groups' => ['test', 'testeur']]);
         
         return redirect('/home');
@@ -83,7 +83,7 @@ if (app()->environment('local')) {
 
         Auth::login($testUser);
         
-        // 🚀 INJECTION D'UN AUTRE GROUPE EN SESSION
+        // INJECTION D'UN AUTRE GROUPE EN SESSION
         session(['keycloak_groups' => ['marketing', 'visiteur']]);
         
         return redirect('/home');

@@ -40,15 +40,14 @@ class HomeController extends Controller
         }
 
         // --------------------------------------------------------
-        // ÉTAPE 2 : 🚀 LOGIQUE DE RECHERCHE TEXTUELLE
+        // ÉTAPE 2 : LOGIQUE DE RECHERCHE TEXTUELLE
         // --------------------------------------------------------
         if (!empty($search)) {
             // 📄 On n'applique le filtre SQL QUE si on n'est PAS à la racine de l'onglet Global
             // Car à la racine, on veut filtrer le NOM des dossiers après le regroupement !
             if (!($tab === 'all' && empty($selectedFolder))) {
                 $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', '%' . $search . '%')
-                      ->orWhere('content', 'like', '%' . $search . '%');
+                    $q->where('title', 'like', '%' . $search . '%');
                 });
             }
         }
@@ -67,7 +66,7 @@ class HomeController extends Controller
             });
         }
 
-        // 🚀 2. EXTRACTION ROBUSTE DES TAGS (Anti-bug de format)
+        // 2. EXTRACTION ROBUSTE DES TAGS (Anti-bug de format)
         $allTagsCollection = collect();
         foreach ($allTagsDocs as $doc) {
             // On vérifie si les tags sont en texte brut (JSON) ou déjà en tableau

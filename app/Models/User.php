@@ -15,7 +15,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'username', // 👈 AJOUTÉ
+        'username',
         'email',
         'group_ldap',
         'franchise_id',
@@ -51,7 +51,7 @@ class User extends Authenticatable
     }
 
     /**
-     * 🚀 TRICHE DE DÉVELOPPEMENT : Simuler un nom de groupe basé sur l'identifiant
+     * TRICHE DE DÉVELOPPEMENT : Simuler un nom de groupe basé sur l'identifiant
      */
     public function getGroupNameAttribute()
     {
@@ -68,7 +68,7 @@ class User extends Authenticatable
             return 'MARKETING';
         }
 
-        // 3. 🚀 TON COMPTE KEYCLOAK : On récupère dynamiquement tes vrais groupes !
+        // 3. TON COMPTE KEYCLOAK : On récupère dynamiquement tes vrais groupes !
         if (auth()->check() && auth()->id() === $this->id) {
             $sessionGroups = session('keycloak_groups', []);
             
