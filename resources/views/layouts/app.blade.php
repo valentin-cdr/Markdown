@@ -98,7 +98,7 @@
                 <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400 transform transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                <h1 class="text-lg font-bold text-gray-900 dark:text-white">Workspace</h1>
+                <h1 class="text-lg font-bold text-gray-900 dark:text-white">Glossaire</h1>
             </a>
             @yield('header-extra')
         </div>
