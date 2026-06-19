@@ -1,17 +1,5 @@
 @extends('layouts.app')
 <style>
-    .tag-selected {
-        background-color: #e0e7ff !important; /* indigo-100 */
-        color: #4338ca !important;            /* indigo-700 */
-        border-color: #a5b4fc !important;     /* indigo-300 */
-    }
-
-    .dark .tag-selected {
-        background-color: rgba(99, 102, 241, 0.20) !important;
-        color: #a5b4fc !important;
-        border-color: #6366f1 !important;
-    }
-
     /* --- Barre de défilement sur mesure --- */
 
     /* Pour Firefox */
@@ -303,19 +291,24 @@
                     {{-- La grille des documents de CE dossier uniquement --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                         @foreach($documents as $doc)
-                            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
+                            {{-- On ajoute 'relative' sur la carte pour pouvoir positionner le nom de l'auteur en haut à droite --}}
+                            <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
+                                
+                                {{-- NOM DE L'AUTEUR POSITIONNÉ EN HAUT À DROITE --}}
+                                <span class="absolute top-4 right-5 text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/40 px-2 py-0.5 rounded-md border border-gray-100 dark:border-gray-800">
+                                    Par : <strong class="text-gray-600 dark:text-gray-300 font-semibold">{{ $doc->user->username }}</strong>
+                                </span>
+
                                 <div>
-                                    <h3 class="text-base font-bold text-gray-900 dark:text-white truncate transition-colors duration-200">{{ $doc->title }}</h3>
+                                    {{-- On ajoute 'pr-20' (padding-right) pour éviter que le titre ne chevauche le nom de l'auteur --}}
+                                    <h3 class="text-base font-bold text-gray-900 dark:text-white truncate transition-colors duration-200 pr-20">{{ $doc->title }}</h3>
+                                    
                                     @if(!empty($doc->tags))
-                                        <div class="flex flex-wrap gap-2 mb-2">
+                                        <div class="flex flex-wrap gap-2 mb-2 mt-1">
                                             @foreach($doc->tags as $t)
                                                 <a href="{{ route('home', ['tab' => $tab, 'tags' => [$t], 'folder' => $selectedFolder]) }}" 
                                                 class="inline-flex items-center mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 transition-colors cursor-pointer max-w-[120px]">
-                                                    
-                                                    {{-- Le hashtag avec une couleur légèrement atténuée --}}
                                                     <span class="text-indigo-400 dark:text-indigo-500 mr-0.5 shrink-0">#</span>
-                                                    
-                                                    {{-- Le texte qui sera coupé par des '...' s'il dépasse les 120px --}}
                                                     <span class="truncate">{{ $t }}</span>
                                                 </a>
                                             @endforeach
@@ -323,14 +316,15 @@
                                     @endif
                                     <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mt-2 transition-colors duration-200">{{ $doc->clean_preview }}</p>
                                 </div>
+
                                 <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3 mt-auto transition-colors duration-200">
                                     {{-- Date tout à gauche --}}
                                     <span class="text-xs text-gray-400">{{ $doc->updated_at->diffForHumans() }}</span>
                                     
-                                    {{-- Auteur et Boutons à droite, strictement alignés --}}
-                                    <div class="flex items-center space-x-3">
+                                    {{-- Uniquement les boutons à droite --}}
+                                    <div class="flex items-center space-x-2">
                                         @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
-                                            <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors">
+                                            <span class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-50 dark:bg-indigo-900/40 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 shadow-sm transition-colors mr-1">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                                                 </svg>
@@ -342,16 +336,9 @@
                                             <a href="{{ route('documents.share.form', $doc->id) }}" class="text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-1.5 px-3 rounded-lg transition flex items-center">Partager</a>
                                             <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">Éditer</a>
                                         @else
-                                            {{-- Le texte est centré verticalement par rapport au bouton --}}
-                                            <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
-                                                De : <strong class="ml-1 text-gray-700 dark:text-gray-300 font-medium">{{ $doc->user->username }}</strong>
-                                            </span>
-
-                                            @if($doc->pivot?->can_edit)
-                                                <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
-                                            @else
-                                                <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Consulter</a>
-                                            @endif
+                                            {{-- Correction faite ici : @else est tout propre --}}
+                                            <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Consulter</a>
+                                            <a href="{{ route('documents.edit', ['document' => $doc->id, 'folder' => $selectedFolder, 'tab' => $tab]) }}" class="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
                                         @endif
                                     </div>
                                 </div>

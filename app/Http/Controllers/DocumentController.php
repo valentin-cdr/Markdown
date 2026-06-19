@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class DocumentController extends Controller
 {
-    // Fonction utilitaire privée pour vérifier les droits d'édition
+    // 🚀 1. SÉCURITÉ MISE À JOUR : Le groupe 'retd' donne un passe-droit total d'édition
     private function canEditDocument(Document $document)
     {
         if ($document->user_id === Auth::id()) return true; // Propriétaire
         
-        // Invité avec les droits d'édition
+        if (in_array('retd', session('keycloak_groups', []))) return true; // Membre du groupe 'retd' (Admin)
+        
+        // Invité avec les droits d'édition accordés individuellement
         return $document->sharedWith()
                         ->where('user_id', Auth::id())
                         ->wherePivot('can_edit', true)
@@ -43,43 +45,37 @@ class DocumentController extends Controller
     public function edit(Document $document) {
         $document = Document::findOrFail($document->id);
 
-        // Si l'utilisateur n'est pas le propriétaire 
-        // ET qu'il n'a pas reçu le droit d'édition (via la table pivot)
-        $isOwner = $document->user_id === auth()->id();
-        $canEditShared = $document->sharedWith()->where('user_id', auth()->id())->where('can_edit', true)->exists();
-
-        if (!$isOwner && !$canEditShared) {
-            // Au lieu d'un abort(403), on redirige proprement avec un message flash !
+        if (!$this->canEditDocument($document)) {
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
         }
         
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
-        
-        // CALCUL DES TAGS
+
+        // CALCUL DES TAGS... (le reste de ton code inchangé)
         $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
         $allTags = $allTagsCollection->unique()->values()->sort();
-
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
         arsort($tagsWithCount);
         $top10Tags = array_slice(array_keys($tagsWithCount), 0, 10);
-
-        // On récupère les tags existants du document
         $selectedTags = old('tags', $document->tags ?? []);
         $pillsTags = collect(array_merge($selectedTags, $top10Tags))->unique()->toArray();
 
-        return view('documents.editor', compact('user', 'groups', 'document', 'allTags', 'pillsTags', 'selectedTags'));
-    }
+        // 🚀 ON RÉCUPÈRE L'ONGLET COURANT DEPUIS L'URL
+        $folder = request()->query('folder');
+        $tab = request()->query('tab');
+
+return view('documents.editor', compact('user', 'groups', 'document', 'allTags', 'pillsTags', 'selectedTags', 'folder', 'tab'));
+}
 
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'tags' => 'nullable|array' // Changé de string à array
+            'tags' => 'nullable|array'
         ]);
 
-        // Nettoyer les tags envoyés (retirer les espaces en trop et les tags vides)
         $tagsArray = array_filter(array_map('trim', $request->tags ?? []));
 
         $document = $request->user()->documents()->create([
@@ -94,6 +90,11 @@ class DocumentController extends Controller
 
     public function update(Request $request, Document $document)
     {
+        // 🚀 Sécurité avant toute modification : est-ce que l'utilisateur a le droit ?
+        if (!$this->canEditDocument($document)) {
+            return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
+        }
+
         // 1. VÉRIFICATION DES CONFLITS (Verrouillage Optimiste)
         if ($request->has('original_updated_at')) {
             $dbUpdatedAt = $document->updated_at->format('Y-m-d H:i:s');
@@ -110,7 +111,7 @@ class DocumentController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'tags' => 'nullable|array' // Changé de string à array
+            'tags' => 'nullable|array'
         ]);
 
         $tagsArray = array_filter(array_map('trim', $request->tags ?? []));
@@ -123,44 +124,56 @@ class DocumentController extends Controller
     
         $document->save();
 
-        // REDIRECTION INTELLIGENTE SELON LE PROPRIÉTAIRE
-        $tab = ($document->user_id === auth()->id()) ? 'my_documents' : 'shared';
+        // 🚀 REDIRECTION INTELLIGENTE : On détecte l'onglet d'origine via la requête ou le propriétaire
+        // Si le formulaire ou l'URL nous donne un onglet, on le garde, sinon on applique la logique par défaut
+        $tab = $request->input('tab');
+        
+        if (empty($tab)) {
+            if (in_array('retd', session('keycloak_groups', [])) && $document->user_id !== auth()->id()) {
+                $tab = 'all';
+            } else {
+                $tab = ($document->user_id === auth()->id()) ? 'my_documents' : 'shared';
+            }
+        }
 
-        return redirect()->route('home', ['tab' => $tab])
+        $redirectParams = ['tab' => $tab];
+
+        // 🚀 CONSERVATION DU DOSSIER : Si on était dans un dossier, on y reste !
+        $folder = $request->input('folder');
+        if (!empty($folder)) {
+            $redirectParams['folder'] = $folder;
+        }
+
+        return redirect()->route('home', $redirectParams)
                         ->with('success', 'Document mis à jour avec succès.');
     }
 
     public function destroy(Document $document) {
-        if ($document->user_id !== Auth::id()) abort(403, 'Seul le propriétaire peut supprimer ce fichier.');
+        // Un admin 'retd' doit aussi pouvoir nettoyer/supprimer les documents si besoin
+        $isAdmin = in_array('retd', session('keycloak_groups', []));
+        $isOwner = $document->user_id === Auth::id();
+
+        if (!$isOwner && !$isAdmin) {
+            abort(403, 'Seul le propriétaire ou un administrateur peut supprimer ce fichier.');
+        }
+
         $document->delete();
         return redirect()->route('home')->with('success', 'Document supprimé avec succès !');
     }
 
     public function show(Document $document) {
-
         $document = Document::findOrFail($document->id);
 
-        // L'utilisateur doit être le propriétaire 
-        // OU le document doit lui avoir été partagé (présent dans la table pivot)
         $isOwner = $document->user_id === auth()->id();
         $isSharedWithMe = $document->sharedWith()->where('user_id', auth()->id())->exists();
-
-        // si tu as un rôle global ou un groupe spécifique (ex: R&D) 
-        // qui a le droit de TOUT voir dans l'onglet "All", tu peux ajouter cette condition :
         $isRetdGroup = in_array('retd', session('keycloak_groups', []));
 
         if (!$isOwner && !$isSharedWithMe && !$isRetdGroup) {
-            // Redirection vers la bibliothèque avec le message d'erreur qu'on a configuré sur l'accueil
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation d'accéder à ce document.");
         }
+
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
-        
-        $isRetd = in_array('retd', $groups);
-
-        if (!$isRetd && $document->user_id !== $user->id && !$document->sharedWith->contains($user->id)) {
-            abort(403, 'Vous n\'avez pas accès à ce document.');
-        }
         
         return view('documents.show', compact('user', 'groups', 'document'));
     }

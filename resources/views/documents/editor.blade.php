@@ -4,6 +4,20 @@
     if ($cancelUrl === url()->current()) {
         $cancelUrl = route('home');
     }
+
+    // --- On récupère la couleur du groupe pour l'éditeur Toast UI ---
+    $editorColors = [
+        'retd'  => ['light' => '#f59e0b', 'dark' => '#fbbf24'], // Amber
+        'onAir' => ['light' => '#3b82f6', 'dark' => '#60a5fa'], // Blue
+        'RSC'   => ['light' => '#10b981', 'dark' => '#34d399'], // Emerald
+    ];
+    // On trouve le groupe actif de l'utilisateur
+    $activeGroups = array_intersect(session('keycloak_groups', []), array_keys($editorColors));
+    $activeGroup = reset($activeGroups);
+    
+    // On définit les variables qu'on va injecter dans le CSS
+    $colorLight = $activeGroup ? $editorColors[$activeGroup]['light'] : '#4f46e5';
+    $colorDark = $activeGroup ? $editorColors[$activeGroup]['dark'] : '#818cf8';
 @endphp
 @section('title', $document ? 'Modifier - ' . $document->title : 'Nouveau document')
 
@@ -64,7 +78,7 @@
         }
         .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
             background-color: #ffffff !important;
-            color: #4f46e5 !important;
+            color: {{ $colorLight }} !important;
         }
         .toastui-editor-defaultUI .ProseMirror,
         .toastui-editor-contents {
@@ -99,7 +113,7 @@
         }
         .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
             background-color: #24292e !important; 
-            color: #818cf8 !important; 
+            color: {{ $colorDark }} !important;
         }
 
         .dark .toastui-editor-defaultUI .toastui-editor-md-splitter {
@@ -132,7 +146,7 @@
         .dark .toastui-editor-contents a,
         .dark .toastui-editor-defaultUI .ProseMirror a,
         .dark .toastui-editor-defaultUI .toastui-editor-md-meta { 
-            color: #818cf8 !important; 
+            color: {{ $colorDark }} !important; /* <-- Modifié ici */
         }
 
         .force-tui-split-width {
@@ -207,18 +221,6 @@
             font-size: 1.1rem !important;
         }
 
-        .tag-selected {
-            background-color: #e0e7ff !important;
-            color: #4338ca !important;
-            border-color: #a5b4fc !important;
-        }
-
-        .dark .tag-selected {
-            background-color: rgba(99, 102, 241, 0.20) !important;
-            color: #a5b4fc !important;
-            border-color: #6366f1 !important;
-        }
-
         /* --- Barre de défilement sur mesure pour les tags --- */
         .custom-scrollbar {
             scrollbar-width: thin;
@@ -281,6 +283,12 @@
         <form id="document-form" action="{{ $document ? route('documents.update', $document->id) : route('documents.store') }}" method="POST">
             @if($document && $document->exists)
                 <input type="hidden" name="original_updated_at" value="{{ $document->updated_at->format('Y-m-d H:i:s') }}">
+            @endif
+            @if(isset($folder))
+                <input type="hidden" name="folder" value="{{ $folder }}">
+            @endif
+            @if(isset($tab))
+                <input type="hidden" name="tab" value="{{ $tab }}">
             @endif
             @csrf
             <input type="hidden" name="cancel_url" value="{{ $cancelUrl }}">
@@ -592,6 +600,7 @@
         function resetButtons() {
             [btnTags, btnClean, btnSplit].forEach(btn => {
                 btn.className = "px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                btn.style.color = ''; // 🧹 AJOUT : On supprime la couleur forcée quand le bouton n'est plus actif
             });
         }
 
@@ -608,7 +617,11 @@
 
         btnTags.addEventListener('click', function() {
             resetButtons();
-            btnTags.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm";
+            // ❌ On enlève text-indigo-600 de la ligne ci-dessous
+            btnTags.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
+            // 🌟 On applique la vraie couleur du groupe actif !
+            btnTags.style.color = tailwind.colors[brandColor][600]; 
+            
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
             editor.changeMode('markdown');
@@ -617,7 +630,9 @@
 
         btnClean.addEventListener('click', function() {
             resetButtons();
-            btnClean.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm";
+            btnClean.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
+            btnClean.style.color = tailwind.colors[brandColor][600]; // 🌟 Magie dynamique
+            
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
             editor.changeMode('wysiwyg'); 
@@ -625,7 +640,9 @@
 
         btnSplit.addEventListener('click', function() {
             resetButtons();
-            btnSplit.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm";
+            btnSplit.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
+            btnSplit.style.color = tailwind.colors[brandColor][600]; // 🌟 Magie dynamique
+            
             mainWrapper.classList.add('force-tui-split-width');
             editor.changeMode('markdown');
             editor.changePreviewStyle('vertical');

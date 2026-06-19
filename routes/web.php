@@ -7,6 +7,7 @@ use App\Http\Controllers\DocumentController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Http\Controllers\ConfigurationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,8 +22,13 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/', fn() => redirect()->route('home'));
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-    
+
+    Route::get('/configuration', [ConfigurationController::class, 'index'])->name('settings.index');
+    Route::post('/configuration/groups', [ConfigurationController::class, 'store'])->name('settings.groups.store');
+    Route::put('/configuration/groups/{group}', [ConfigurationController::class, 'update'])->name('settings.groups.update');
+    Route::delete('/configuration/groups/{group}', [ConfigurationController::class, 'destroy'])->name('settings.groups.destroy');    
     // Éditeur
     Route::get('/documents/create', [DocumentController::class, 'create'])->name('documents.create');
     Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])->name('documents.edit');
@@ -65,7 +71,7 @@ if (app()->environment('local')) {
         Auth::login($testUser);
         
         // INJECTION DU GROUPE EN SESSION
-        session(['keycloak_groups' => ['test', 'testeur']]);
+        session(['keycloak_groups' => ['test', 'onAir']]);
         
         return redirect('/home');
     });
@@ -84,7 +90,7 @@ if (app()->environment('local')) {
         Auth::login($testUser);
         
         // INJECTION D'UN AUTRE GROUPE EN SESSION
-        session(['keycloak_groups' => ['marketing', 'visiteur']]);
+        session(['keycloak_groups' => ['marketing', 'RSC']]);
         
         return redirect('/home');
     });
