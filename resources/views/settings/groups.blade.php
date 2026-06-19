@@ -65,25 +65,42 @@
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Clé (ex: onAir)</label>
-                        <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom Affiché (ex: OnAir)</label>
-                        <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white">
                     </div>
 
+                    {{-- Champ couleur 1 --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Principale (Mode Clair)</label>
-                        {{-- On enlève border et p-0 sur l'input, et on tue les bordures internes de Chrome/Firefox --}}
-                        <input type="color" name="scroll_light" id="create-scroll-light" value="#374151" required 
-                            class="mt-1 block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
+                        <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
+                            
+                            {{-- Le faux carré visible qui fait les transitions CSS fluides --}}
+                            <div id="swatch-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            
+                            {{-- Le vrai input, invisible (opacity-0) cliquable par dessus --}}
+                            <input type="color" name="scroll_light" value="#ffffff" required 
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                oninput="document.getElementById('swatch-light').style.backgroundColor = this.value; document.getElementById('swatch-light').classList.remove('bg-white', 'dark:bg-gray-700')">
+                        </div>
                     </div>
 
+                    {{-- Champ couleur 2 --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Secondaire (Mode Sombre)</label>
-                        <input type="color" name="scroll_dark" id="create-scroll-dark" value="#374151" required 
-                            class="mt-1 block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
+                        <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
+                            
+                            {{-- Le faux carré visible --}}
+                            <div id="swatch-dark" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            
+                            {{-- Le vrai input, invisible (opacity-0) cliquable par dessus --}}
+                            <input type="color" name="scroll_dark" value="#374151" required 
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                oninput="document.getElementById('swatch-dark').style.backgroundColor = this.value; document.getElementById('swatch-dark').classList.remove('bg-white', 'dark:bg-gray-700')">
+                        </div>
                     </div>
                 </div>
 

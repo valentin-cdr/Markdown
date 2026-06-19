@@ -236,6 +236,39 @@
             // Retire la classe après l'animation (300ms > 200ms pour laisser finir)
             setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 300);
         });
+
+        // 🎨 FONCTION POUR METTRE À JOUR LES COULEURS
+        function updateThemeColors(theme) {
+            const themeColor = theme === 'dark' ? '#374151' : '#ffffff';
+            const defaultColors = ['#ffffff', '#374151']; // Les couleurs par défaut de tes thèmes
+
+            const inputIds = [
+                'create-scroll-light', 
+                'create-scroll-dark', 
+                'edit-scroll-light', 
+                'edit-scroll-dark'
+            ];
+
+            inputIds.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    // On met à jour SEULEMENT si la couleur actuelle est une couleur par défaut
+                    // (Si l'utilisateur a cliqué et choisi du rouge, on ne l'écrase pas !)
+                    if (defaultColors.includes(input.value.toLowerCase())) {
+                        input.value = themeColor;
+                    }
+                }
+            });
+        }
+
+        // 1. On applique la bonne couleur au chargement de la page
+        const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        updateThemeColors(initialTheme);
+
+        // 2. On écoute ton événement personnalisé quand tu cliques sur le bouton
+        window.addEventListener('theme-changed', function(e) {
+            updateThemeColors(e.detail.theme);
+        });
     </script>
     
     @yield('scripts')
