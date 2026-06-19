@@ -65,12 +65,12 @@
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Clé (ex: onAir)</label>
-                        <input type="text" name="key" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom Affiché (ex: OnAir)</label>
-                        <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
 
                     <div>
@@ -116,12 +116,12 @@
                     {{-- Ligne 1 : Clé & Nom --}}
                     <div class="flex flex-col justify-end">
                         <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 h-5">Clé (Non modifiable)</label>
-                        <input type="text" id="edit-key-display" disabled class="block w-full h-10 rounded-md border-gray-300 bg-gray-50 text-gray-500 shadow-sm sm:text-sm dark:bg-gray-900 dark:border-gray-700">
+                        <input type="text" id="edit-key-display" disabled class="block w-full h-7 pl-2 rounded-md border-gray-300 bg-gray-50 text-gray-500 shadow-sm sm:text-sm dark:bg-gray-900 dark:border-gray-700">
                     </div>
 
                     <div class="flex flex-col justify-end">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 h-5">Nom Affiché</label>
-                        <input type="text" name="name" id="edit-name" required class="block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="text" name="name" id="edit-name" required class="block w-full h-7 pl-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
 
                     {{-- Ligne 2 : Les Couleurs réalignées par le bas (flex items-end) --}}
