@@ -105,10 +105,10 @@
     </script>
 
     <style>
-        /* Variables CSS dynamiques pour les scrollbars */
+        /* Variables CSS fixes pour les scrollbars (indépendantes du groupe) */
         :root {
-            --scrollbar-thumb-light: {{ $navGroupBrand['scroll_light'] ?? '#6366f1' }};
-            --scrollbar-thumb-dark: {{ $navGroupBrand['scroll_dark'] ?? '#818cf8' }};
+            --scrollbar-thumb-light: #cbd5e1; /* Gris clair (slate-300) */
+            --scrollbar-thumb-dark: #475569;  /* Gris foncé (slate-600) */
         }
 
         /* Personnalisation de la barre de défilement */

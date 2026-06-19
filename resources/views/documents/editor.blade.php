@@ -538,7 +538,6 @@
             }
         });
 
-        // Si on appuie sur Entrée, on crée le tag et on vide la recherche
         if (e && e.key === 'Enter') {
             e.preventDefault(); 
             if (input.value.trim() !== '') {
@@ -600,7 +599,7 @@
         function resetButtons() {
             [btnTags, btnClean, btnSplit].forEach(btn => {
                 btn.className = "px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
-                btn.style.color = ''; // 🧹 AJOUT : On supprime la couleur forcée quand le bouton n'est plus actif
+                btn.style.color = '';
             });
         }
 
@@ -617,10 +616,8 @@
 
         btnTags.addEventListener('click', function() {
             resetButtons();
-            // ❌ On enlève text-indigo-600 de la ligne ci-dessous
             btnTags.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            // 🌟 On applique la vraie couleur du groupe actif !
-            btnTags.style.color = tailwind.colors[brandColor][600]; 
+            btnTags.style.color = '{{ $colorLight }}'; 
             
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
@@ -631,7 +628,7 @@
         btnClean.addEventListener('click', function() {
             resetButtons();
             btnClean.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            btnClean.style.color = tailwind.colors[brandColor][600]; // 🌟 Magie dynamique
+            btnClean.style.color = '{{ $colorLight }}'; 
             
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
@@ -641,7 +638,7 @@
         btnSplit.addEventListener('click', function() {
             resetButtons();
             btnSplit.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            btnSplit.style.color = tailwind.colors[brandColor][600]; // 🌟 Magie dynamique
+            btnSplit.style.color = '{{ $colorLight }}'; 
             
             mainWrapper.classList.add('force-tui-split-width');
             editor.changeMode('markdown');
