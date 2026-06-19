@@ -75,12 +75,15 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Principale (Mode Clair)</label>
-                        <input type="color" name="scroll_light" id="create-scroll-light" value="#f97316" required class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm cursor-pointer dark:bg-gray-700 dark:border-gray-600">
+                        {{-- On enlève border et p-0 sur l'input, et on tue les bordures internes de Chrome/Firefox --}}
+                        <input type="color" name="scroll_light" id="create-scroll-light" value="#374151" required 
+                            class="mt-1 block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Secondaire (Mode Sombre)</label>
-                        <input type="color" name="scroll_dark" id="create-scroll-dark" value="#ea580c" required class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm cursor-pointer dark:bg-gray-700 dark:border-gray-600">
+                        <input type="color" name="scroll_dark" id="create-scroll-dark" value="#374151" required 
+                            class="mt-1 block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
                     </div>
                 </div>
 
@@ -124,12 +127,14 @@
                     {{-- Ligne 2 : Les Couleurs réalignées par le bas (flex items-end) --}}
                     <div class="flex flex-col justify-between h-[76px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">Couleur Principale (Mode Clair)</label>
-                        <input type="color" name="scroll_light" id="edit-scroll-light" required class="block w-full h-10 rounded-md border-gray-300 shadow-sm cursor-pointer dark:bg-gray-700 dark:border-gray-600 p-0 border-0">
+                        <input type="color" name="scroll_light" id="edit-scroll-light" required 
+                            class="block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
                     </div>
 
                     <div class="flex flex-col justify-between h-[76px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">Couleur Secondaire (Mode Sombre)</label>
-                        <input type="color" name="scroll_dark" id="edit-scroll-dark" required class="block w-full h-10 rounded-md border-gray-300 shadow-sm cursor-pointer dark:bg-gray-700 dark:border-gray-600 p-0 border-0">
+                        <input type="color" name="scroll_dark" id="edit-scroll-dark" required 
+                            class="block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
                     </div>
                 </div>
             </div>
