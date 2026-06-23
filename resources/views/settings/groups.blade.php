@@ -26,7 +26,6 @@
                         <div class="w-8 h-8 rounded-full shadow-sm" style="background-image: linear-gradient(to right, {{ $group->scroll_light }}, {{ $group->scroll_dark }});"></div>
                         <div>
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $group->name }} ({{ $group->key }})</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Scroll Clair: {{ $group->scroll_light }} | Scroll Sombre: {{ $group->scroll_dark }}</p>
                         </div>
                     </div>
                     
