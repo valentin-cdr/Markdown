@@ -44,47 +44,37 @@ class User extends Authenticatable
     // Les documents partagés avec toi (Invité)
     public function sharedDocuments()
     {
-        // 👉 AJOUT : ->withPivot('can_edit')
         return $this->belongsToMany(Document::class, 'document_user')
                     ->withPivot('can_edit')
                     ->withTimestamps();
     }
 
     /**
-     * TRICHE DE DÉVELOPPEMENT : Simuler un nom de groupe basé sur l'identifiant
+     * Résolution du nom de groupe pour l'affichage
      */
     public function getGroupNameAttribute()
     {
-        // 1. Vrai groupe en base de données (si tu l'enregistres un jour)
+        // 1. Vrai groupe en base de données (si synchronisé)
         if (!empty($this->attributes['group_name'])) {
             return strtoupper($this->attributes['group_name']);
         }
 
-        // 2. Les comptes locaux : on utilise le VRAI nom de tes groupes de test
-        if ($this->username === 'test_invite') {
-            return 'TEST';
-        }
-        if ($this->username === 'test_invite_2') {
-            return 'MARKETING';
-        }
-
-        // 3. TON COMPTE KEYCLOAK : On récupère dynamiquement tes vrais groupes !
+        // 2. Déduction dynamique via la session Keycloak pour l'utilisateur actuellement connecté
         if (auth()->check() && auth()->id() === $this->id) {
             $sessionGroups = session('keycloak_groups', []);
             
-            // Si tu as au moins un groupe dans ta session
             if (!empty($sessionGroups)) {
-                // On cherche d'abord si 'retd' existe dans le tableau
+                // Priorité au groupe admin 'retd' s'il est présent
                 if (in_array('retd', $sessionGroups)) {
                     return 'RETD';
                 }
                 
-                // S'il n'y a pas 'retd', on prend le premier groupe de la liste par défaut
+                // Sinon, on prend le premier groupe de la liste renvoyée par Keycloak
                 return strtoupper($sessionGroups[0]); 
             }
         }
 
-        // 4. Par défaut
+        // 3. Valeur de secours par défaut
         return 'GÉNÉRAL / SANS GROUPE';
     }
 }

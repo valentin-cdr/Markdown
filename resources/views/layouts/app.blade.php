@@ -1,38 +1,26 @@
 @php
     $userGroups = [];
 
-    if (auth()->check()) {
-        // 1. SYSTÈME DE DEBUG : Forçage temporaire via l'URL (ex: ?group=onAir)
-        if (request()->has('group')) {
-            $userGroups = [request()->query('group')];
-            // On met à jour la session pour que la couleur reste en naviguant
-            session(['keycloak_groups' => $userGroups]); 
-        } 
-        // 2. LECTURE DE LA SESSION : 
-        // Fonctionne pour le vrai SSO Keycloak ET pour tes routes locales (/dev/login-test)
-        elseif (!empty(session('keycloak_groups'))) {
-            $userGroups = (array) session('keycloak_groups');
-        }
+    // LECTURE STRICTE DE LA SESSION KEYCLOAK (Production)
+    if (auth()->check() && !empty(session('keycloak_groups'))) {
+        $userGroups = (array) session('keycloak_groups');
     }
 
-    // 2. Récupération dynamique depuis la base de données (avec Cache d'1 heure pour les performances)
+    // Récupération dynamique depuis la base de données (avec Cache d'1 heure pour les performances)
     $groupBrandConfig = \Illuminate\Support\Facades\Cache::remember('groups_config', 3600, function () {
-        // Transforme les résultats de la BDD pour qu'ils aient la même structure que ton ancien tableau
         return \App\Models\Group::all()->keyBy('key')->toArray();
     });
 
-    // 3. Résolution du groupe actif pour l'affichage
+    // Résolution du groupe actif pour l'affichage
     $navGroupBrand = null;
     
     // On compare les groupes de l'utilisateur avec notre configuration de couleurs
     $matchingGroups = array_intersect($userGroups, array_keys($groupBrandConfig));
 
     if (!empty($matchingGroups)) {
-        // S'il a plusieurs groupes valides, on prend le premier qui correspond
         $firstMatch = reset($matchingGroups);
         $navGroupBrand = $groupBrandConfig[$firstMatch];
     }
-
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -48,40 +36,50 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
-        // 1. On récupère les données de la base de données
-        const dbTheme = '{{ $navGroupBrand['theme'] ?? 'orange' }}';
-        const scrollLight = '{{ $navGroupBrand['scroll_light'] ?? '#f97316' }}'; // Couleur claire par défaut (orange)
-        const scrollDark = '{{ $navGroupBrand['scroll_dark'] ?? '#ea580c' }}';   // Couleur sombre par défaut
+        // Couleurs de la franchise/groupe actif (avec valeurs de repli si aucun groupe ne correspond)
+        const scrollLight = '{{ $navGroupBrand['scroll_light'] ?? '#f97316' }}';
+        const scrollDark  = '{{ $navGroupBrand['scroll_dark']  ?? '#ea580c' }}';
 
-        let colorPalette;
-
-        // 2. Si le thème est "custom", on génère une palette Tailwind dynamique avec la couleur choisie !
-        if (dbTheme === 'custom') {
-            colorPalette = {
-                50: scrollLight,
-                100: scrollLight,
-                200: scrollLight,
-                300: scrollLight,
-                400: scrollLight,
-                50: scrollLight,
-                500: scrollLight, // Couleur principale utilisée par bg-indigo-600 ou text-indigo-600
-                600: scrollLight, // Couleur principale (hover)
-                700: scrollDark,
-                800: scrollDark,
-                900: scrollDark,
-                950: scrollDark
+        // Génère une palette Tailwind à 11 teintes (50 → 950) à partir de 2 couleurs :
+        // - les teintes claires interpolent vers le blanc
+        // - les teintes foncées interpolent vers le noir
+        // Cela garantit une échelle progressive cohérente (pas de saut brutal entre 600 et 700).
+        function hexToRgb(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const num = parseInt(hex, 16);
+            return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+        }
+        function rgbToHex({ r, g, b }) {
+            return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+        }
+        function mix(c1, c2, ratio) {
+            return {
+                r: c1.r + (c2.r - c1.r) * ratio,
+                g: c1.g + (c2.g - c1.g) * ratio,
+                b: c1.b + (c2.b - c1.b) * ratio
             };
-        } else {
-            // Sinon, on prend la palette classique (blue, amber, emerald, etc.)
-            colorPalette = tailwind.colors[dbTheme];
         }
 
-        // 3. Sécurité ultime : si toujours rien (ex: bug BDD), on force l'orange de Tailwind
-        if (!colorPalette) {
-            colorPalette = tailwind.colors.orange;
-        }
+        const baseLight = hexToRgb(scrollLight);
+        const baseDark  = hexToRgb(scrollDark);
+        const white = { r: 255, g: 255, b: 255 };
+        const black = { r: 0, g: 0, b: 0 };
 
-        // 4. On injecte la palette finale dans la configuration globale
+        const colorPalette = {
+            50:  rgbToHex(mix(white, baseLight, 0.12)),
+            100: rgbToHex(mix(white, baseLight, 0.25)),
+            200: rgbToHex(mix(white, baseLight, 0.45)),
+            300: rgbToHex(mix(white, baseLight, 0.65)),
+            400: rgbToHex(mix(white, baseLight, 0.85)),
+            500: scrollLight,
+            600: rgbToHex(mix(baseLight, baseDark, 0.5)),
+            700: scrollDark,
+            800: rgbToHex(mix(baseDark, black, 0.25)),
+            900: rgbToHex(mix(baseDark, black, 0.5)),
+            950: rgbToHex(mix(baseDark, black, 0.75))
+        };
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -148,15 +146,13 @@
             
             <a href="{{ route('home') }}" class="flex items-center space-x-3 group">
                 @if($navGroupBrand)
-                    {{-- LE GRADIENT EST MAINTENANT DYNAMIQUE SELON LE GROUPE --}}
-                    <span class="text-2xl md:text-3xl font-serif text-transparent bg-clip-text bg-gradient-to-br {{ $navGroupBrand['gradient'] }} tracking-widest italic select-none transition-all duration-300 group-hover:scale-105" 
-                          style="font-family: 'Playfair Display', serif;">
+                    {{-- FIX PROD : Rendu du dégradé en CSS inline natif à partir de la BDD pour éviter le blocage du compilateur Tailwind --}}
+                    <span class="text-2xl md:text-3xl font-serif text-transparent bg-clip-text tracking-widest italic select-none transition-all duration-300 group-hover:scale-105" 
+                          style="font-family: 'Playfair Display', serif; background-image: linear-gradient(to bottom right, {{ $navGroupBrand['scroll_light'] }}, {{ $navGroupBrand['scroll_dark'] }});">
                         {{ $navGroupBrand['name'] }}
                     </span>
-                    
                     <span class="text-gray-300 dark:text-gray-600 font-light text-xl">|</span>
                 @else
-                    {{-- Icône par défaut si aucun groupe --}}
                     <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400 transform transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -207,7 +203,6 @@
         var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
-        // Affiche la bonne icône au chargement
         if (document.documentElement.classList.contains('dark')) {
             themeToggleLightIcon.classList.remove('hidden');
         } else {
@@ -217,7 +212,6 @@
         var themeToggleBtn = document.getElementById('theme-toggle');
 
         themeToggleBtn.addEventListener('click', function() {
-            // Active les transitions sur TOUS les éléments
             document.documentElement.classList.add('theme-transitioning');
 
             themeToggleDarkIcon.classList.toggle('hidden');
@@ -233,41 +227,7 @@
                 window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: 'dark' } }));
             }
 
-            // Retire la classe après l'animation (300ms > 200ms pour laisser finir)
             setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 300);
-        });
-
-        // 🎨 FONCTION POUR METTRE À JOUR LES COULEURS
-        function updateThemeColors(theme) {
-            const themeColor = theme === 'dark' ? '#374151' : '#ffffff';
-            const defaultColors = ['#ffffff', '#374151']; // Les couleurs par défaut de tes thèmes
-
-            const inputIds = [
-                'create-scroll-light', 
-                'create-scroll-dark', 
-                'edit-scroll-light', 
-                'edit-scroll-dark'
-            ];
-
-            inputIds.forEach(id => {
-                const input = document.getElementById(id);
-                if (input) {
-                    // On met à jour SEULEMENT si la couleur actuelle est une couleur par défaut
-                    // (Si l'utilisateur a cliqué et choisi du rouge, on ne l'écrase pas !)
-                    if (defaultColors.includes(input.value.toLowerCase())) {
-                        input.value = themeColor;
-                    }
-                }
-            });
-        }
-
-        // 1. On applique la bonne couleur au chargement de la page
-        const initialTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        updateThemeColors(initialTheme);
-
-        // 2. On écoute ton événement personnalisé quand tu cliques sur le bouton
-        window.addEventListener('theme-changed', function(e) {
-            updateThemeColors(e.detail.theme);
         });
     </script>
     

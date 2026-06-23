@@ -3,7 +3,6 @@
 @section('title', 'Configuration des Groupes')
 
 @section('content')
-{{-- Changement ici : max-w-4xl -> max-w-6xl pour élargir l'interface --}}
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Configuration des Couleurs de Groupes</h1>
 
@@ -23,8 +22,8 @@
             @forelse($groups as $group)
                 <li class="px-4 py-4 flex items-center justify-between sm:px-6">
                     <div class="flex items-center space-x-4">
-                        {{-- Aperçu de la couleur --}}
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-r {{ $group->gradient }} shadow-sm"></div>
+                        {{-- FIX PROD : Rendu de la pastille d'aperçu en CSS inline natif stable --}}
+                        <div class="w-8 h-8 rounded-full shadow-sm" style="background-image: linear-gradient(to right, {{ $group->scroll_light }}, {{ $group->scroll_dark }});"></div>
                         <div>
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $group->name }} ({{ $group->key }})</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">Scroll Clair: {{ $group->scroll_light }} | Scroll Sombre: {{ $group->scroll_dark }}</p>
@@ -58,7 +57,6 @@
             <form action="{{ route('settings.groups.store') }}" method="POST">
                 @csrf
                 
-                {{-- Inputs cachés techniques gérés par JS, la BDD reçoit toujours 'custom' et le bon dégradé --}}
                 <input type="hidden" name="theme" value="custom">
                 <input type="hidden" name="gradient" id="create-gradient">
 
@@ -77,11 +75,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Principale (Mode Clair)</label>
                         <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
-                            
-                            {{-- Le faux carré avec un ID unique pour la CRÉATION --}}
                             <div id="swatch-create-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
-                            
-                            {{-- Le vrai input avec son ID ORIGINAL indispensable pour l'envoi du formulaire --}}
                             <input type="color" name="scroll_light" id="create-scroll-light" value="#ffffff" required 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 oninput="document.getElementById('swatch-create-light').style.backgroundColor = this.value; document.getElementById('swatch-create-light').classList.remove('bg-white', 'dark:bg-gray-700')">
@@ -92,11 +86,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Secondaire (Mode Sombre)</label>
                         <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
-                            
-                            {{-- Le faux carré avec un ID unique --}}
                             <div id="swatch-create-dark" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
-                            
-                            {{-- Le vrai input avec son ID ORIGINAL --}}
                             <input type="color" name="scroll_dark" id="create-scroll-dark" value="#374151" required 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 oninput="document.getElementById('swatch-create-dark').style.backgroundColor = this.value; document.getElementById('swatch-create-dark').classList.remove('bg-white', 'dark:bg-gray-700')">
@@ -130,7 +120,6 @@
 
             <div class="p-6 space-y-6">
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    {{-- Ligne 1 : Clé & Nom --}}
                     <div class="flex flex-col justify-end">
                         <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 h-5">Clé (Non modifiable)</label>
                         <input type="text" id="edit-key-display" disabled class="block w-full h-7 pl-2 rounded-md border-gray-300 bg-gray-50 text-gray-500 shadow-sm sm:text-sm dark:bg-gray-900 dark:border-gray-700">
@@ -141,17 +130,24 @@
                         <input type="text" name="name" id="edit-name" required class="block w-full h-7 pl-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
 
-                    {{-- Ligne 2 : Les Couleurs réalignées par le bas (flex items-end) --}}
                     <div class="flex flex-col justify-between h-[76px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">Couleur Principale (Mode Clair)</label>
-                        <input type="color" name="scroll_light" id="edit-scroll-light" required 
-                            class="block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
+                        <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
+                            <div id="swatch-edit-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            <input type="color" name="scroll_light" id="edit-scroll-light" required 
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                oninput="document.getElementById('swatch-edit-light').style.backgroundColor = this.value; document.getElementById('swatch-edit-light').classList.remove('bg-white', 'dark:bg-gray-700')">
+                        </div>
                     </div>
 
                     <div class="flex flex-col justify-between h-[76px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">Couleur Secondaire (Mode Sombre)</label>
-                        <input type="color" name="scroll_dark" id="edit-scroll-dark" required 
-                            class="block w-full h-7 cursor-pointer rounded-md shadow-sm border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none">
+                        <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
+                            <div id="swatch-edit-dark" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            <input type="color" name="scroll_dark" id="edit-scroll-dark" required 
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                oninput="document.getElementById('swatch-edit-dark').style.backgroundColor = this.value; document.getElementById('swatch-edit-dark').classList.remove('bg-white', 'dark:bg-gray-700')">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -165,45 +161,47 @@
 </div>
 
 <script>
-    // Calcule automatiquement le dégradé à partir des deux sélecteurs HTML5
     function autoCalculateGradient(prefix) {
         const lightColor = document.getElementById(`${prefix}-scroll-light`).value;
         const darkColor = document.getElementById(`${prefix}-scroll-dark`).value;
 
-        // Génère la syntaxe de classes arbitraires Tailwind CSS
         const computedGradient = `from-[${lightColor}] to-[${darkColor}] dark:from-[${darkColor}] dark:to-[${lightColor}]`;
         
         document.getElementById(`${prefix}-gradient`).value = computedGradient;
     }
 
-    // Écoute en direct les changements de palette de l'utilisateur
     document.addEventListener('DOMContentLoaded', function() {
         ['create', 'edit'].forEach(prefix => {
             const lightInput = document.getElementById(`${prefix}-scroll-light`);
             const darkInput = document.getElementById(`${prefix}-scroll-dark`);
 
             if (lightInput && darkInput) {
-                // Calcule une première fois au chargement
                 autoCalculateGradient(prefix);
 
-                // Recalcule à chaque mouvement de la souris sur la palette
                 lightInput.addEventListener('input', () => autoCalculateGradient(prefix));
                 darkInput.addEventListener('input', () => autoCalculateGradient(prefix));
             }
         });
     });
 
-    // Ouvre la modale et applique les valeurs
     function openEditModal(group) {
         document.getElementById('edit-modal').classList.remove('hidden');
         document.getElementById('edit-form').action = `/configuration/groups/${group.id}`;
         
         document.getElementById('edit-key-display').value = group.key;
         document.getElementById('edit-name').value = group.name;
+        
         document.getElementById('edit-scroll-light').value = group.scroll_light;
         document.getElementById('edit-scroll-dark').value = group.scroll_dark;
         
-        // Relance le calcul immédiat pour la modale d'édition
+        const swatchLight = document.getElementById('swatch-edit-light');
+        swatchLight.style.backgroundColor = group.scroll_light;
+        swatchLight.classList.remove('bg-white', 'dark:bg-gray-700');
+
+        const swatchDark = document.getElementById('swatch-edit-dark');
+        swatchDark.style.backgroundColor = group.scroll_dark;
+        swatchDark.classList.remove('bg-white', 'dark:bg-gray-700');
+        
         autoCalculateGradient('edit');
     }
 

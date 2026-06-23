@@ -58,37 +58,6 @@
                 Connexion avec Keycloak (SSO)
             </a>
         </div>
-
-        <!-- BOUTON DE TEST DÉVELOPPEUR -->
-        @if(app()->environment('local'))
-            <div class="mt-6 relative">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500">Zone développeur</span>
-                </div>
-            </div>
-
-            <div class="mt-6">
-                <a href="{{ url('/dev/login-test') }}" 
-                   class="w-full flex justify-center items-center py-3.5 px-4 border border-indigo-200 dark:border-indigo-900/50 rounded-xl shadow-sm text-sm font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 transition-all duration-200">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    Connexion "Compte Testeur"
-                </a>
-            </div>
-            <div class="mt-6">
-                <a href="{{ url('/dev/login-test2') }}" 
-                   class="w-full flex justify-center items-center py-3.5 px-4 border border-indigo-200 dark:border-indigo-900/50 rounded-xl shadow-sm text-sm font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 transition-all duration-200">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    Connexion "Compte Testeur 2"
-                </a>
-            </div>
-        @endif
         
         <div class="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
             &copy; {{ date('Y') }} Workspace. Tous droits réservés.
