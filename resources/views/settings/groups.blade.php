@@ -76,7 +76,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Principale (Mode Clair)</label>
                         <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
                             <div id="swatch-create-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
-                            <input type="color" name="scroll_light" id="create-scroll-light" value="#ffffff" required 
+                            <input type="color" name="scroll_light" id="create-scroll-light" value="#374151" required 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 oninput="document.getElementById('swatch-create-light').style.backgroundColor = this.value; document.getElementById('swatch-create-light').classList.remove('bg-white', 'dark:bg-gray-700')">
                         </div>
