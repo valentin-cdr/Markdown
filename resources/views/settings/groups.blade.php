@@ -61,12 +61,12 @@
 
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Clé (ex: onAir)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Clé</label>
                         <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white transition-colors duration-300">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom Affiché (ex: OnAir)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom Affiché</label>
                         <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white transition-colors duration-300">
                     </div>
 
