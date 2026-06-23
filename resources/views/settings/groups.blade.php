@@ -65,12 +65,12 @@
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Clé (ex: onAir)</label>
-                        <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white">
+                        <input type="text" name="key" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white transition-colors duration-300">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom Affiché (ex: OnAir)</label>
-                        <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white">
+                        <input type="text" name="name" required class="h-7 pl-2 mt-1 block w-full bg-white dark:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:text-white transition-colors duration-300">
                     </div>
 
                     {{-- Champ couleur 1 --}}
@@ -78,13 +78,13 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Principale (Mode Clair)</label>
                         <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
                             
-                            {{-- Le faux carré visible qui fait les transitions CSS fluides --}}
-                            <div id="swatch-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            {{-- Le faux carré avec un ID unique pour la CRÉATION --}}
+                            <div id="swatch-create-light" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
                             
-                            {{-- Le vrai input, invisible (opacity-0) cliquable par dessus --}}
-                            <input type="color" name="scroll_light" value="#ffffff" required 
+                            {{-- Le vrai input avec son ID ORIGINAL indispensable pour l'envoi du formulaire --}}
+                            <input type="color" name="scroll_light" id="create-scroll-light" value="#ffffff" required 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                oninput="document.getElementById('swatch-light').style.backgroundColor = this.value; document.getElementById('swatch-light').classList.remove('bg-white', 'dark:bg-gray-700')">
+                                oninput="document.getElementById('swatch-create-light').style.backgroundColor = this.value; document.getElementById('swatch-create-light').classList.remove('bg-white', 'dark:bg-gray-700')">
                         </div>
                     </div>
 
@@ -93,13 +93,13 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Couleur Secondaire (Mode Sombre)</label>
                         <div class="relative mt-1 block w-full h-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-0.5 shadow-sm transition-colors duration-300">
                             
-                            {{-- Le faux carré visible --}}
-                            <div id="swatch-dark" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
+                            {{-- Le faux carré avec un ID unique --}}
+                            <div id="swatch-create-dark" class="w-full h-full rounded-sm bg-white dark:bg-gray-700 transition-colors duration-300"></div>
                             
-                            {{-- Le vrai input, invisible (opacity-0) cliquable par dessus --}}
-                            <input type="color" name="scroll_dark" value="#374151" required 
+                            {{-- Le vrai input avec son ID ORIGINAL --}}
+                            <input type="color" name="scroll_dark" id="create-scroll-dark" value="#374151" required 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                oninput="document.getElementById('swatch-dark').style.backgroundColor = this.value; document.getElementById('swatch-dark').classList.remove('bg-white', 'dark:bg-gray-700')">
+                                oninput="document.getElementById('swatch-create-dark').style.backgroundColor = this.value; document.getElementById('swatch-create-dark').classList.remove('bg-white', 'dark:bg-gray-700')">
                         </div>
                     </div>
                 </div>
