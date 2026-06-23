@@ -366,7 +366,7 @@
                                     $hiddenCount = count($doc->tags) - 3;
                                 @endphp
                                 
-                                <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                                <div class="flex flex-wrap gap-2 mb-2 mt-1">
                                     @foreach($displayTags as $t)
                                         <a href="{{ route('home', ['tab' => $tab, 'tags' => [$t], 'folder' => $selectedFolder ?? null]) }}" 
                                         {{-- SUPPRESSION DE mt-0.5 ET -ml-1 ICI --}}
