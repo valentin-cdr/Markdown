@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Configuration des Couleurs de Groupes</h1>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Configuration des Groupes</h1>
 
     {{-- Message de succès --}}
     @if(session('success'))
