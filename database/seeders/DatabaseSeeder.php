@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 🚀 PROD : Aucun compte local généré ici. 
-        // L'authentification et la création des utilisateurs sont gérées exclusivement par le SSO Keycloak.
+    
     }
 }
