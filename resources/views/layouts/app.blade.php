@@ -147,14 +147,14 @@
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200 relative">
 
     {{-- ── MENU BURGER FLOTTANT ── --}}
-    <div x-data="{ menuOpen: false }" class="fixed top-2.5 left-2 z-[100]">
+    <div x-data="{ menuOpen: false }" class="fixed top-1.5 left-2 z-[100]">
         {{-- Bouton d'ouverture/fermeture --}}
         <button @click="menuOpen = !menuOpen" 
                 class="p-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500 transition-all focus:outline-none">
-            <svg x-show="!menuOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg x-show="!menuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-            <svg x-show="menuOpen" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg x-show="menuOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
