@@ -32,6 +32,43 @@
         </label>
     </form>
 
+    {{-- 🚀 BLOC COPIER LE LIEN VERS LA PAGE SHOW (Superset) ── --}}
+    <div x-data="{ 
+            copied: false, 
+            {{-- On génère le lien absolu vers la page de lecture du document --}}
+            url: '{{ route('documents.show', $document->id) }}' 
+        }" 
+        class="w-full max-w-lg mt-6">
+        
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Lien d'intégration (Superset)
+        </label>
+        
+        <div class="flex shadow-sm rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+            {{-- Champ texte en lecture seule --}}
+            <input type="text" x-model="url" readonly
+                class="flex-1 min-w-0 block w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-0 focus:ring-0 select-all cursor-text">
+            
+            {{-- Bouton Copier avec Alpine.js --}}
+            <button @click="navigator.clipboard.writeText(url).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                    type="button"
+                    class="inline-flex items-center px-4 py-2 border-l border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none transition-colors group">
+                
+                {{-- Icône "Copier" par défaut --}}
+                <svg x-show="!copied" class="w-5 h-5 mr-1.5 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span x-show="!copied">Copier</span>
+                
+                {{-- Icône "Copié !" (Check) --}}
+                <svg x-show="copied" x-cloak class="w-5 h-5 mr-1.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span x-show="copied" x-cloak class="text-emerald-500">Copié !</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Liste des accès -->
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Personnes ayant accès</h3>
     <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
