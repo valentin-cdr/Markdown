@@ -10,7 +10,7 @@ class Document extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['user_id', 'title', 'content', 'tags'];
+    protected $fillable = ['user_id', 'title', 'content', 'tags', 'group_key'];
 
     protected $casts = [
         'tags' => 'array',

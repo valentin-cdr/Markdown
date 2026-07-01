@@ -19,22 +19,31 @@ class HomeController extends Controller
 
         $selectedFolder = $request->input('folder');
 
+        // On récupère l'environnement sélectionné pour "Mes documents" et "Partagés"
+        $activeGroup = $this->getActiveGroupKey();
+
         // --------------------------------------------------------
         // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
         // --------------------------------------------------------
         if ($tab === 'shared') {
+            // 🔒 Cloisonné : uniquement les partagés de l'environnement actif
             $query = auth()->user()->sharedDocuments()
+                ->where('documents.group_key', $activeGroup) 
                 ->with('user')
                 ->orderBy('documents.updated_at', 'desc'); 
                 
         } elseif ($tab === 'all' && $isRetd) {
+            // 🌍 REFUGE GLOBAL : Aucun filtre group_key ici ! 
+            // On charge TOUS les documents de la base de données pour le regroupement par dossier.
             $query = \App\Models\Document::with('user')
                 ->withCount('sharedWith')
                 ->orderBy('documents.updated_at', 'desc');
                 
         } else {
             $tab = 'my_documents'; 
+            // 🔒 Cloisonné : uniquement mes documents de l'environnement actif
             $query = auth()->user()->documents()
+                ->where('documents.group_key', $activeGroup) 
                 ->withCount('sharedWith')
                 ->orderBy('documents.updated_at', 'desc'); 
         }
@@ -115,7 +124,7 @@ class HomeController extends Controller
                     $documentsToDisplay = $query->paginate(12)->withQueryString();
                 } 
                 else {
-                    // Vue Intérieure : Filtrage normal
+                    // Vue Intérieure d'un dossier : Filtrage normal
                     $allDocs = $query->get();
 
                     $folderDocs = $allDocs->filter(function($doc) use ($selectedFolder) {
@@ -140,12 +149,11 @@ class HomeController extends Controller
                 }
 
             } else {
-                // 📁 VUE RACINE : On regroupe d'abord tous les documents par Dossier (Nom du groupe)
+                // 📁 VUE RACINE : On regroupe tous les documents existants par Dossier (Nom du groupe de l'auteur)
                 $groupedDocs = $query->get()->groupBy(function($doc) {
                     return strtoupper($doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE');
                 });
 
-                // 🚀 LE FILTRE SUR LE NOM DES DOSSIERS ICI : On filtre les clés du groupe PHP !
                 if (!empty($search)) {
                     $groupedDocs = $groupedDocs->filter(function($groupDocs, $groupName) use ($search) {
                         return str_contains(strtolower($groupName), strtolower($search));

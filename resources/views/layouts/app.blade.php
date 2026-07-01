@@ -1,29 +1,50 @@
 @php
     $userGroups = [];
 
-    // LECTURE STRICTE DE LA SESSION KEYCLOAK (Production)
+    // 1. LECTURE STRICTE DE LA SESSION KEYCLOAK
     if (auth()->check() && !empty(session('keycloak_groups'))) {
         $userGroups = (array) session('keycloak_groups');
     }
 
-    // Récupération dynamique depuis la base de données (avec Cache d'1 heure pour les performances)
+    // 2. Sécurisation : Est-ce un super admin ?
+    $isAdmin = in_array('retd', $userGroups); 
+
+    // 3. INTERCEPTION DU SÉLECTEUR D'ENVIRONNEMENT (Seulement si admin)
+    // Si l'admin a sélectionné une franchise dans le menu, on l'enregistre dans la session
+    if ($isAdmin && request()->has('group')) {
+        $requestedGroup = request()->query('group');
+        if (empty($requestedGroup)) {
+            session()->forget('admin_forced_group');
+        } else {
+            session(['admin_forced_group' => $requestedGroup]);
+        }
+    }
+
+    // 4. Récupération dynamique depuis la base de données
     $groupBrandConfig = \Illuminate\Support\Facades\Cache::remember('groups_config', 3600, function () {
         return \App\Models\Group::all()->keyBy('key')->toArray();
     });
 
-    // Résolution du groupe actif pour l'affichage
+    // 5. RÉSOLUTION DU GROUPE ACTIF POUR L'AFFICHAGE
     $navGroupBrand = null;
+    $currentGroupKey = null; // Utilisé pour présélectionner le bon élément dans le <select>
     
-    // On compare les groupes de l'utilisateur avec notre configuration de couleurs
-    $matchingGroups = array_intersect($userGroups, array_keys($groupBrandConfig));
-
-    if (!empty($matchingGroups)) {
-        $firstMatch = reset($matchingGroups);
-        $navGroupBrand = $groupBrandConfig[$firstMatch];
+    // Si l'admin a forcé un groupe, c'est lui qui gagne
+    if ($isAdmin && session()->has('admin_forced_group')) {
+        $forcedKey = session('admin_forced_group');
+        if (isset($groupBrandConfig[$forcedKey])) {
+            $navGroupBrand = $groupBrandConfig[$forcedKey];
+            $currentGroupKey = $forcedKey;
+        }
+    } else {
+        // Sinon, on compare les groupes de l'utilisateur avec la configuration de la BDD
+        $matchingGroups = array_intersect($userGroups, array_keys($groupBrandConfig));
+        if (!empty($matchingGroups)) {
+            $firstMatch = reset($matchingGroups);
+            $navGroupBrand = $groupBrandConfig[$firstMatch];
+            $currentGroupKey = $firstMatch;
+        }
     }
-
-    // Sécurisation des droits pour le menu global
-    $isAdmin = in_array('retd', $userGroups); // On vérifie si l'utilisateur a le rôle admin
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -210,25 +231,156 @@
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 py-3 pr-6 pl-16 flex justify-between items-center h-16 shrink-0 transition-colors duration-200">
         <div class="flex items-center space-x-4">
             
-            <a href="{{ route('home') }}" class="flex items-center space-x-3 group">
-                @if($navGroupBrand)
-                    {{-- FIX PROD : Rendu du dégradé en CSS inline natif à partir de la BDD pour éviter le blocage du compilateur Tailwind --}}
-                    <span class="text-2xl md:text-3xl font-serif text-transparent bg-clip-text tracking-widest italic select-none transition-all duration-300 group-hover:scale-105" 
-                          style="font-family: 'Playfair Display', serif; background-image: linear-gradient(to bottom right, {{ $navGroupBrand['scroll_light'] }}, {{ $navGroupBrand['scroll_dark'] }});">
-                        {{ $navGroupBrand['name'] }}
-                    </span>
-                    <span class="text-gray-300 dark:text-gray-600 font-light text-xl">|</span>
-                @else
-                    <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-400 transform transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                @endif
+            {{-- 🛠️ LOGO DYNAMIQUE PAR ENVIRONNEMENT & THÈME (Correction RETD) --}}
+            <a href="{{ route('home') }}" class="flex items-center space-x-3 group shrink-0">
                 
-                <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Glossaire</h1>
+                <div class="h-8 md:h-10 w-auto flex items-center">
+                    {{-- On vérifie si on a un groupe actif ET que ce n'est pas le groupe technique 'retd' --}}
+                    @if($currentGroupKey && $currentGroupKey !== 'retd')
+                        
+                        {{-- 🏢 SI ON EST DANS UNE FRANCHISE (ex: ONAIR, Rituel...) --}}
+                        <img src="{{ asset('images/' . ($navGroupBrand['name'] ?? '') . '.png') }}" 
+                             alt="Logo {{ $navGroupBrand['name'] ?? '' }}" 
+                             class="h-full w-auto object-contain transition-all duration-300 group-hover:scale-105"
+                             onerror="this.style.display='none'">
+                             
+                    @else
+                        
+                        {{-- 🧪 SI ON EST EN MODE GLOBAL / R&D (Clé vide ou égale à 'retd') --}}
+                        {{-- 1. Image NOIRE (Affichée en thème CLAIR, cachée en thème sombre) --}}
+                        <img src="{{ asset('images/retd_noir.png') }}" 
+                             alt="Logo RETD (Clair)" 
+                             class="h-full w-auto object-contain transition-all duration-300 group-hover:scale-105 inline dark:hidden">
+
+                        {{-- 2. Image BLANCHE (Cachée en thème clair, affichée en thème sombre) --}}
+                        <img src="{{ asset('images/retd_blanc.png') }}" 
+                             alt="Logo RETD (Sombre)" 
+                             class="h-full w-auto object-contain transition-all duration-300 group-hover:scale-105 hidden dark:inline">
+                             
+                    @endif
+                </div>
+                
+                <span class="text-gray-300 dark:text-gray-600 font-light text-xl">|</span>
+                
+                <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Dashboard</h1>
             </a>
 
-            {{-- Le bouton de configuration classique est retiré d'ici puisqu'il est maintenant dans le menu Burger --}}
-            
+            {{-- 🛠️ LE SÉLECTEUR DE WORKSPACE (Composant Alpine.js - Couleurs 100% natives du site) --}}
+            @if($isAdmin)
+                @php 
+                    $allGroups = \App\Models\Group::where('key', '!=', 'retd')->orderBy('name')->get(); 
+                    $activeColor = $currentGroupKey ? ($navGroupBrand['scroll_light'] ?? '#f97316') : '#f97316';
+                @endphp
+                
+                <div x-data="{ envOpen: false }" class="relative ml-4 z-[90]">
+                    
+                    {{-- LE BOUTON (Utilise les vrais bg-gray-800 et border-gray-700 de ton site) --}}
+                    <button @click="envOpen = !envOpen" 
+                            class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-xs font-bold rounded-full px-3 py-1.5 focus:outline-none transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm dark:shadow-none">
+                        
+                        {{-- Point de couleur actif --}}
+                        <div class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ $activeColor }}; box-shadow: 0 0 6px {{ $activeColor }}80;"></div>
+                        
+                        {{-- Texte --}}
+                        <span class="tracking-wide">
+                            {{ $currentGroupKey ? ($navGroupBrand['name'] ?? 'Inconnu') : 'Réseau Global' }}
+                        </span>
+                        
+                        {{-- Chevron --}}
+                        <svg class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" :class="envOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    {{-- LE MENU DÉROULANT --}}
+                    <div x-show="envOpen" 
+                         @click.outside="envOpen = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                         x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         x-cloak
+                         class="absolute left-0 mt-3 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl dark:shadow-2xl flex flex-col py-2">
+                        
+                        {{-- En-tête --}}
+                        <div class="px-4 py-2">
+                            <span class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                Changer d'environnement
+                            </span>
+                        </div>
+
+                        {{-- Option 1 : Réseau Global (Annule le filtre) --}}
+                        <a href="?group=" 
+                           class="flex items-center justify-between px-4 py-2.5 mx-2 rounded-xl text-sm transition-colors {{ (!$currentGroupKey || $currentGroupKey === 'retd') ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                            <div class="flex items-center gap-3">
+                                {{-- Point jaune/orange --}}
+                                <div class="w-2 h-2 rounded-full shrink-0" style="background-color: #f97316; box-shadow: 0 0 6px #f9731680;"></div>
+                                
+                                {{-- Nom et Logo adaptatif --}}
+                                <span class="font-medium flex items-center gap-2 {{ (!$currentGroupKey || $currentGroupKey === 'retd') ? 'text-[#f97316]' : 'text-gray-700 dark:text-gray-300' }}">
+                                    
+                                    {{-- Image NOIRE (Thème clair) --}}
+                                    <img src="{{ asset('images/retd_noir.png') }}" 
+                                         alt="R&D" 
+                                         class="w-4 h-4 object-contain shrink-0 inline dark:hidden">
+                                         
+                                    {{-- Image BLANCHE (Thème sombre) --}}
+                                    <img src="{{ asset('images/retd_blanc.png') }}" 
+                                         alt="R&D" 
+                                         class="w-4 h-4 object-contain shrink-0 hidden dark:inline">
+                                         
+                                    Réseau Global (R&D)
+                                </span>
+                            </div>
+                            
+                            {{-- Checkmark --}}
+                            @if(!$currentGroupKey || $currentGroupKey === 'retd')
+                                <svg class="w-4 h-4 text-[#f97316] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            @endif
+                        </a>
+
+                        {{-- Séparateur utilisant les bordures natives --}}
+                        <div class="h-px bg-gray-200 dark:bg-gray-700 my-1 mx-4"></div>
+
+                        {{-- Options : Les franchises --}}
+                        <div class="max-h-60 overflow-y-auto py-1">
+                            @foreach($allGroups as $g)
+                                <a href="?group={{ $g->key }}" 
+                                   class="flex items-center justify-between px-4 py-2.5 mx-2 rounded-xl text-sm transition-colors {{ $currentGroupKey === $g->key ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                    <div class="flex items-center gap-3">
+                                        {{-- Point coloré --}}
+                                        <div class="w-2 h-2 rounded-full shrink-0" style="background-color: {{ $g->scroll_light }}; box-shadow: 0 0 6px {{ $g->scroll_light }}80;"></div>
+                                        
+                                        {{-- Logo et Nom --}}
+                                        <span class="font-medium flex items-center gap-2 {{ $currentGroupKey === $g->key ? '' : 'text-gray-700 dark:text-gray-300' }}"
+                                              style="{{ $currentGroupKey === $g->key ? 'color: ' . $g->scroll_light . ';' : '' }}">
+                                            
+                                            <img src="{{ asset('images/' . $g->name . '.png') }}" 
+                                                 alt="" 
+                                                 class="w-4 h-4 object-contain shrink-0"
+                                                 onerror="this.style.display='none'"> 
+                                            
+                                            {{ $g->name }}
+                                        </span>
+                                    </div>
+
+                                    {{-- Checkmark --}}
+                                    @if($currentGroupKey === $g->key)
+                                        <svg class="w-4 h-4 shrink-0" style="color: {{ $g->scroll_light }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @yield('header-extra')
         </div>
         

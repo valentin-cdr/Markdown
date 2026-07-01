@@ -103,4 +103,22 @@ class ConfigurationController extends Controller
 
         return redirect()->back()->with('success', 'Groupe supprimé de l\'application.');
     }
+
+    public function switchGroup($key)
+    {
+        // Sécurité : Seuls les admins du groupe 'retd' ont le droit de tricher / changer d'environnement
+        if (!in_array('retd', session('keycloak_groups', []))) {
+            abort(403, 'Accès refusé.');
+        }
+
+        if ($key === 'global') {
+            // Si on choisit le labo global, on nettoie la session
+            session()->forget('admin_forced_group');
+        } else {
+            // Sinon, on enregistre la clé du groupe choisi (ex: onAir, RSC...)
+            session(['admin_forced_group' => $key]);
+        }
+
+        return redirect()->back();
+    }
 }

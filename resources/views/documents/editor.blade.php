@@ -408,7 +408,7 @@
 
             <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-5">
                 <div>
-                    @if($document && $document->user_id === Auth::id())
+                    @if($document && ($document->user_id === Auth::id() || in_array('retd', session('keycloak_groups', []))))
                         <button type="button" onclick="confirmDelete()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium py-2 px-4 transition">Supprimer</button>
                     @endif
                 </div>

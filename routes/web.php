@@ -48,4 +48,8 @@ Route::middleware('auth')->group(function () {
     
     Route::delete('/documents/{document}/share/{user}', [DocumentController::class, 'unshare'])->name('documents.unshare');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    
+    // Route pour permettre à l'admin de changer d'environnement/groupe à la volée
+    Route::get('/groups/switch/{key}', [ConfigurationController::class, 'switchGroup'])->name('groups.switch');
+
 });

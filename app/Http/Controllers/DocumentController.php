@@ -81,7 +81,10 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
         $document = $request->user()->documents()->create([
             'title' => $request->title,
             'content' => $request->content,
-            'tags' => empty($tagsArray) ? null : array_values($tagsArray)
+            'tags' => empty($tagsArray) ? null : array_values($tagsArray),
+            
+            // 🚀 CORRECTION ICI : On utilise notre fonction centralisée et infaillible !
+            'group_key' => $this->getActiveGroupKey()
         ]);
 
         return redirect()->route('home')
