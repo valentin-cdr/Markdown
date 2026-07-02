@@ -25,6 +25,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/', fn() => redirect()->route('home'));
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
+    Route::get('/configuration', [ConfigurationController::class, 'index'])->name('settings.index');
+    Route::post('/configuration/groups', [ConfigurationController::class, 'store'])->name('settings.groups.store');
+    Route::put('/configuration/groups/{group}', [ConfigurationController::class, 'update'])->name('settings.groups.update');
+    Route::delete('/configuration/groups/{group}', [ConfigurationController::class, 'destroy'])->name('settings.groups.destroy');    
     // Éditeur
     Route::get('/documents/create', [DocumentController::class, 'create'])->name('documents.create');
     Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])->name('documents.edit');
@@ -43,9 +47,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/documents/{document}/share/{user}', [DocumentController::class, 'updateShare'])->name('documents.share.update');
     
     Route::delete('/documents/{document}/share/{user}', [DocumentController::class, 'unshare'])->name('documents.unshare');
-
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    
     // Route pour permettre à l'admin de changer d'environnement/groupe à la volée
     Route::get('/groups/switch/{key}', [ConfigurationController::class, 'switchGroup'])->name('groups.switch');
 
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
