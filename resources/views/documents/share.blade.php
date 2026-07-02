@@ -41,7 +41,7 @@
         class="w-full max-w-lg mt-6">
         
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Lien d'intégration (Superset)
+            Lien du document
         </label>
         
         <div class="flex shadow-sm rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">

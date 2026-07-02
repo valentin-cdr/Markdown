@@ -22,9 +22,10 @@ class Controller extends BaseController
         $userGroups = (array) session('keycloak_groups', []);
         $isAdmin = in_array('retd', $userGroups);
 
-        // 🚀 INTERCEPTION ICI : On met à jour la session AVANT que les autres contrôleurs ne cherchent les documents !
+        // 🚀 INTERCEPTION : On utilise input() pour être sûr de capter la valeur du sélecteur
         if ($isAdmin && request()->has('group')) {
-            $requestedGroup = request()->query('group');
+            $requestedGroup = request()->input('group'); // 👈 Remplacé query() par input()
+            
             if (empty($requestedGroup)) {
                 session()->forget('admin_forced_group');
             } else {
@@ -38,6 +39,7 @@ class Controller extends BaseController
         }
 
         // 2. Sinon, on prend le vrai groupe Keycloak de l'utilisateur
+        // (Le cache se reconstruira proprement tout seul suite au cache:clear)
         $groupBrandConfig = \Illuminate\Support\Facades\Cache::remember('groups_config', 3600, function () {
             return \App\Models\Group::all()->keyBy('key')->toArray();
         });
@@ -45,7 +47,7 @@ class Controller extends BaseController
         $matchingGroups = array_intersect($userGroups, array_keys($groupBrandConfig));
 
         if (!empty($matchingGroups)) {
-            return reset($matchingGroups); // Retourne par ex: 'onAir' ou 'retd'
+            return reset($matchingGroups); 
         }
 
         return null;
