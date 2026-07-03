@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Http\Controllers\ConfigurationController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,5 +52,20 @@ Route::middleware('auth')->group(function () {
     
     // Route pour permettre à l'admin de changer d'environnement/groupe à la volée
     Route::get('/groups/switch/{key}', [ConfigurationController::class, 'switchGroup'])->name('groups.switch');
+
+    
+
+    Route::get('/switch-environment', function (Request $request) {
+        $group = $request->query('group');
+        
+        // On modifie LA VRAIE variable attendue par ton application
+        if (empty($group)) {
+            session()->forget('active_group_key');
+        } else {
+            session(['active_group_key' => $group]);
+        }
+        
+        return redirect()->route('home');
+    })->name('env.switch')->middleware('auth');
 
 });
