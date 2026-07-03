@@ -42,31 +42,39 @@ class DocumentController extends Controller
         return view('documents.editor', compact('user', 'groups', 'document', 'allTags', 'pillsTags', 'selectedTags'));
     }
 
-    public function edit(Document $document) {
-        $document = Document::findOrFail($document->id);
+    public function edit($id)
+    {
+        // 1. On vérifie les groupes de l'utilisateur
+        $userGroups = (array) session('keycloak_groups', []);
+        $isAdmin = in_array('retd', $userGroups);
 
-        if (!$this->canEditDocument($document)) {
-            return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
+        // 2. On va chercher le document (SANS FILTRE GLOBAL pour éviter la 404)
+        $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
+
+        // 3. Sécurité : On vérifie les droits SANS MODIFIER LA SESSION
+        if (!$isAdmin) {
+            // 🔒 Les NON-ADMINS ne peuvent éditer que si le doc appartient à un de leurs groupes
+            if (!in_array($document->group_key, $userGroups)) {
+                abort(404);
+            }
         }
-        
-        $user = Auth::user();
-        $groups = session('keycloak_groups', []);
 
-        // CALCUL DES TAGS... (le reste de ton code inchangé)
+        // --- GESTION DES TAGS (Pour éviter l'erreur Undefined variable) ---
         $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
         $allTags = $allTagsCollection->unique()->values()->sort();
+
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
         arsort($tagsWithCount);
         $top10Tags = array_slice(array_keys($tagsWithCount), 0, 10);
-        $selectedTags = old('tags', $document->tags ?? []);
+
+        // Récupérer les tags du document actuel (ou vide si aucun)
+        $selectedTags = old('tags', $document->tags ?? []); 
         $pillsTags = collect(array_merge($selectedTags, $top10Tags))->unique()->toArray();
+        // --- FIN GESTION DES TAGS ---
 
-        // 🚀 ON RÉCUPÈRE L'ONGLET COURANT DEPUIS L'URL
-        $folder = request()->query('folder');
-        $tab = request()->query('tab');
-
-return view('documents.editor', compact('user', 'groups', 'document', 'allTags', 'pillsTags', 'selectedTags', 'folder', 'tab'));
-}
+        // 4. APPEL DE LA VUE : Ton environnement n'a pas bougé !
+        return view('documents.editor', compact('document', 'allTags', 'pillsTags', 'selectedTags'));
+    }
 
     public function store(Request $request)
     {
@@ -78,22 +86,23 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
 
         $tagsArray = array_filter(array_map('trim', $request->tags ?? []));
 
+        // 🔒 Le document prend STRICTEMENT le group_key de l'environnement en cours d'utilisation
         $document = $request->user()->documents()->create([
             'title' => $request->title,
             'content' => $request->content,
             'tags' => empty($tagsArray) ? null : array_values($tagsArray),
-            
-            // 🚀 CORRECTION ICI : On utilise notre fonction centralisée et infaillible !
-            'group_key' => $this->getActiveGroupKey()
+            'group_key' => $this->getActiveGroupKey() 
         ]);
 
         return redirect()->route('home')
                          ->with('success', 'Document créé avec succès !');
     }
 
-    public function update(Request $request, Document $document)
+    public function update(Request $request, $id)
     {
-        // 🚀 Sécurité avant toute modification : est-ce que l'utilisateur a le droit ?
+        // 🚨 FIX 404 : On va chercher le document manuellement sans le scope global de groupe
+        $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
+
         if (!$this->canEditDocument($document)) {
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation de modifier ce document.");
         }
@@ -127,10 +136,7 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
     
         $document->save();
 
-        // 🚀 REDIRECTION INTELLIGENTE : On détecte l'onglet d'origine via la requête ou le propriétaire
-        // Si le formulaire ou l'URL nous donne un onglet, on le garde, sinon on applique la logique par défaut
         $tab = $request->input('tab');
-        
         if (empty($tab)) {
             if (in_array('retd', session('keycloak_groups', [])) && $document->user_id !== auth()->id()) {
                 $tab = 'all';
@@ -141,7 +147,6 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
 
         $redirectParams = ['tab' => $tab];
 
-        // 🚀 CONSERVATION DU DOSSIER : Si on était dans un dossier, on y reste !
         $folder = $request->input('folder');
         if (!empty($folder)) {
             $redirectParams['folder'] = $folder;
@@ -152,7 +157,6 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
     }
 
     public function destroy(Document $document) {
-        // Un admin 'retd' doit aussi pouvoir nettoyer/supprimer les documents si besoin
         $isAdmin = in_array('retd', session('keycloak_groups', []));
         $isOwner = $document->user_id === Auth::id();
 
@@ -219,5 +223,13 @@ return view('documents.editor', compact('user', 'groups', 'document', 'allTags',
         if ($document->user_id !== Auth::id()) abort(403);
         $document->sharedWith()->detach($user->id);
         return back()->with('success', 'Accès révoqué pour ' . $user->name);
+    }
+
+    /**
+     * 🚀 Récupère proprement la clé de groupe active de la session
+     */
+    protected function getActiveGroupKey()
+    {
+        return session('active_group_key', 'retd');
     }
 }

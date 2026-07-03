@@ -10,11 +10,30 @@ class Document extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['user_id', 'title', 'content', 'tags', 'group_key'];
+    protected $fillable = [
+        'title',
+        'content',
+        'tags',
+        'group_key', // 🚨 Autorisé pour l'écriture
+        'user_id',
+    ];
 
     protected $casts = [
         'tags' => 'array',
     ];
+
+    /**
+     * 🛡️ LE CERVEAU DE L'ÉTANCHÉITÉ
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // 🚨 On ajoute un anti-slash \ devant Illuminate pour ne plus dépendre des imports du haut
+        static::addGlobalScope('ancient_isolation', function (\Illuminate\Database\Eloquent\Builder $builder) {
+            $builder->where('documents.group_key', session('active_group_key', 'retd'));
+        });
+    }
 
     // Le propriétaire du document
     public function user()

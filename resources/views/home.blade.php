@@ -222,12 +222,12 @@
     @php
         $isRootAllTab = ($tab === 'all' && empty($selectedFolder));
         
-        // Est-ce qu'on doit afficher le super-dossier selon la recherche ?
+        // Est-ce qu'on doit afficher le super-dossier "Tous les fichiers" selon la recherche ?
         $showAllDocs = $isRootAllTab && (empty($search) || 
                        str_contains(strtolower('tous les fichiers'), strtolower($search)) || 
                        str_contains(strtolower('all_docs'), strtolower($search)));
         
-        // La page est considérée comme vide si aucun dossier ET aucun super-dossier ne correspondent
+        // La page est déclarée vide si aucune collection n'est trouvée et que le dossier global n'est pas demandé
         $isPageEmpty = $isRootAllTab ? ($documents->isEmpty() && !$showAllDocs) : $documents->isEmpty();
     @endphp
 

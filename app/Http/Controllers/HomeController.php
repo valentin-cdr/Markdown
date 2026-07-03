@@ -4,12 +4,44 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use App\Models\Document;
 
 class HomeController extends Controller
 {
     public function index(Request $request)
     {
+        // --------------------------------------------------------
+        // 🔄 1. INTERRUPTEUR D'ENVIRONNEMENT (Prise en compte immédiate sans redirection)
+        // --------------------------------------------------------
+        if ($request->has('group')) {
+            $group = $request->input('group');
+            
+            if (empty($group) || $group === 'retd') {
+                session()->forget('active_group_key');
+            } else {
+                session(['active_group_key' => $group]);
+            }
+            
+            session()->save(); // On force l'enregistrement immédiat en mémoire
+        }
+
+        // --------------------------------------------------------
+        // 🌐 RÉCUPÉRATION DES DONNÉES DE L'API EXTERNE
+        // --------------------------------------------------------
+        $apiDocuments = collect(); 
+        try {
+            $response = Http::withToken(env('RETD_API_TOKEN'))
+                            ->timeout(5)
+                            ->get(env('RETD_API_URL'));
+
+            if ($response->successful()) {
+                $apiDocuments = collect($response->json());
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Erreur de connexion à l'API : " . $e->getMessage());
+        }
+
         $tab = $request->input('tab', 'my_documents'); 
         $search = $request->input('search');
         $selectedTags = (array) $request->input('tags', []);
@@ -18,32 +50,26 @@ class HomeController extends Controller
         $isRetd = in_array('retd', $groups);
 
         $selectedFolder = $request->input('folder');
-
-        // On récupère l'environnement sélectionné pour "Mes documents" et "Partagés"
         $activeGroup = $this->getActiveGroupKey();
 
         // --------------------------------------------------------
         // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
         // --------------------------------------------------------
         if ($tab === 'shared') {
-            // 🔒 Cloisonné : uniquement les partagés de l'environnement actif
             $query = auth()->user()->sharedDocuments()
-                ->where('documents.group_key', $activeGroup) 
                 ->with('user')
                 ->orderBy('documents.updated_at', 'desc'); 
                 
         } elseif ($tab === 'all' && $isRetd) {
-            // 🌍 REFUGE GLOBAL : Aucun filtre group_key ici ! 
-            // On charge TOUS les documents de la base de données pour le regroupement par dossier.
-            $query = \App\Models\Document::with('user')
+            // 🌍 REFUGE GLOBAL : Désactivation du Scope Global d'isolation uniquement ici pour l'admin
+            $query = \App\Models\Document::withoutGlobalScopes()
+                ->with('user')
                 ->withCount('sharedWith')
                 ->orderBy('documents.updated_at', 'desc');
                 
         } else {
             $tab = 'my_documents'; 
-            // 🔒 Cloisonné : uniquement mes documents de l'environnement actif
             $query = auth()->user()->documents()
-                ->where('documents.group_key', $activeGroup) 
                 ->withCount('sharedWith')
                 ->orderBy('documents.updated_at', 'desc'); 
         }
@@ -52,9 +78,12 @@ class HomeController extends Controller
         // ÉTAPE 2 : LOGIQUE DE RECHERCHE TEXTUELLE
         // --------------------------------------------------------
         if (!empty($search)) {
-            // 📄 On n'applique le filtre SQL QUE si on n'est PAS à la racine de l'onglet Global
-            // Car à la racine, on veut filtrer le NOM des dossiers après le regroupement !
-            if (!($tab === 'all' && empty($selectedFolder))) {
+            if ($tab === 'all' && empty($selectedFolder)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                      ->orWhere('group_key', 'like', '%' . $search . '%');
+                });
+            } else {
                 $query->where(function($q) use ($search) {
                     $q->where('title', 'like', '%' . $search . '%');
                 });
@@ -62,38 +91,31 @@ class HomeController extends Controller
         }
 
         // --------------------------------------------------------
-        // ÉTAPE 3 : EXTRACTION DES TAGS (AVANT DE LES FILTRER)
+        // ÉTAPE 3 : EXTRACTION DES TAGS BASÉE SUR L'ENVIRONNEMENT
         // --------------------------------------------------------
         $tagsQuery = clone $query;
         $allTagsDocs = $tagsQuery->get();
 
-        // 1. On filtre les documents selon le dossier (si on est dedans)
         if ($tab === 'all' && !empty($selectedFolder) && $selectedFolder !== 'ALL_DOCS') {
             $allTagsDocs = $allTagsDocs->filter(function($doc) use ($selectedFolder) {
-                $groupName = $doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE';
-                return strtoupper(trim($groupName)) === strtoupper(trim($selectedFolder));
+                $envName = $doc->group_key ?? 'retd';
+                return strtoupper(trim($envName)) === strtoupper(trim($selectedFolder));
             });
         }
 
-        // 2. EXTRACTION ROBUSTE DES TAGS (Anti-bug de format)
         $allTagsCollection = collect();
         foreach ($allTagsDocs as $doc) {
-            // On vérifie si les tags sont en texte brut (JSON) ou déjà en tableau
             $tags = is_string($doc->tags) ? json_decode($doc->tags, true) : $doc->tags;
-            
-            // Si c'est bien un tableau et qu'il n'est pas vide, on l'ajoute à notre collection
             if (is_array($tags) && !empty($tags)) {
                 $allTagsCollection = $allTagsCollection->merge($tags);
             }
         }
         
-        // 3. Tri et comptage
         $allTags = $allTagsCollection->unique()->values()->sort();
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
         arsort($tagsWithCount); 
         
         $maxTags = 10;
-        
         $popularUnselected = collect(array_keys($tagsWithCount))
             ->diff($selectedTags)
             ->take(max(0, $maxTags - count($selectedTags)))
@@ -101,9 +123,6 @@ class HomeController extends Controller
 
         $pillsTags = array_merge($selectedTags, $popularUnselected);
 
-        // --------------------------------------------------------
-        // ÉTAPE 4 : APPLICATION DU FILTRE DES TAGS SÉLECTIONNÉS
-        // --------------------------------------------------------
         if (!empty($selectedTags)) {
             $query->where(function($q) use ($selectedTags) {
                 foreach ($selectedTags as $t) {
@@ -113,23 +132,19 @@ class HomeController extends Controller
         }
 
         // --------------------------------------------------------
-        // ÉTAPE 5 : RÉCUPÉRATION FINALE DES DONNÉES
+        // ÉTAPE 5 : RÉCUPÉRATION FINALE ET RÉPARTITION
         // --------------------------------------------------------
         if ($tab === 'all' && $isRetd) {
             
             if (!empty($selectedFolder)) {
-                
-                // Le dossier spécial qui affiche TOUT
                 if ($selectedFolder === 'ALL_DOCS') {
                     $documentsToDisplay = $query->paginate(12)->withQueryString();
                 } 
                 else {
-                    // Vue Intérieure d'un dossier : Filtrage normal
                     $allDocs = $query->get();
-
                     $folderDocs = $allDocs->filter(function($doc) use ($selectedFolder) {
-                        $groupName = $doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE';
-                        return strtoupper(trim($groupName)) === strtoupper(trim($selectedFolder));
+                        $envName = $doc->group_key ?? 'retd';
+                        return strtoupper(trim($envName)) === strtoupper(trim($selectedFolder));
                     })->values();
 
                     $perPage = 12;
@@ -149,16 +164,9 @@ class HomeController extends Controller
                 }
 
             } else {
-                // 📁 VUE RACINE : On regroupe tous les documents existants par Dossier (Nom du groupe de l'auteur)
                 $groupedDocs = $query->get()->groupBy(function($doc) {
-                    return strtoupper($doc->user->group_name ?? 'GÉNÉRAL / SANS GROUPE');
+                    return strtoupper($doc->group_key ?? 'RETD');
                 });
-
-                if (!empty($search)) {
-                    $groupedDocs = $groupedDocs->filter(function($groupDocs, $groupName) use ($search) {
-                        return str_contains(strtolower($groupName), strtolower($search));
-                    });
-                }
 
                 $documentsToDisplay = $groupedDocs;
             }
@@ -169,6 +177,7 @@ class HomeController extends Controller
 
         return view('home', [
             'documents' => $documentsToDisplay,
+            'apiDocuments' => $apiDocuments,
             'tab' => $tab,
             'search' => $search,
             'selectedTags' => $selectedTags,
@@ -176,5 +185,10 @@ class HomeController extends Controller
             'allTags' => $allTags,
             'selectedFolder' => $selectedFolder,
         ]);
+    }
+
+    protected function getActiveGroupKey()
+    {
+        return session('active_group_key', 'retd');
     }
 }
