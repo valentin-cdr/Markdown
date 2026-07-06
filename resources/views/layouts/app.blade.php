@@ -317,7 +317,7 @@
                         class="flex items-center gap-2 max-w-[60vw] sm:max-w-[260px] pl-2.5 pr-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:border-[var(--brand-primary)] transition-all focus:outline-none">
                         
                         @if(!$isGlobalView && isset($navGroupBrand))
-                            <img src="{{ asset('images/' . $navGroupBrand['name'] . '.png') }}" alt="" class="h-5 w-5 rounded object-contain shrink-0" onerror="this.style.display='none'">
+                            <img src="{{ asset('images/' . $navGroupBrand['key'] . '.png') }}" alt="" class="h-5 w-5 rounded object-contain shrink-0" onerror="this.style.display='none'">
                         @else
                             <span class="h-2.5 w-2.5 rounded-full shrink-0" style="background: #EEA21E"></span>
                         @endif
@@ -356,7 +356,7 @@
                                 class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm font-medium transition
                                             {{ $isActive ? 'bg-gray-50 dark:bg-gray-700 text-[var(--brand-primary)]' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                                 
-                                <img src="{{ asset('images/' . $env->name . '.png') }}" alt="" class="h-4 w-4 rounded object-contain shrink-0" onerror="this.style.display='none'">
+                                <img src="{{ asset('images/' . $env->key . '.png') }}" alt="" class="h-4 w-4 rounded object-contain shrink-0" onerror="this.style.display='none'">
                                 
                                 <span class="flex-1 truncate" @if($isActive) style="color: {{ $env->scroll_light ?? 'var(--brand-primary)' }}" @endif>{{ $env->name }}</span>
                                 @if($isActive)<span class="text-[10px]">✓</span>@endif
