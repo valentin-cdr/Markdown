@@ -290,9 +290,9 @@
             @endphp
 
             {{-- ── SÉLECTEUR D'ENVIRONNEMENT (Admin réseau) ── --}}
-           @if($isAdmin)
+            @if($isAdmin)
                 {{-- 👇 Remplacement de top-1.5 par top-3 --}}
-                <div x-data="{ envOpen: false }" class="fixed top-3 left-[240px] z-50">
+                <div x-data="{ envOpen: false }" class="fixed top-4 left-[250px] z-50">
                     
                     <button @click="envOpen = !envOpen"
                         class="flex items-center gap-2 max-w-[60vw] sm:max-w-[260px] pl-2.5 pr-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:border-[var(--brand-primary)] transition-all focus:outline-none">
