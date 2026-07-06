@@ -309,8 +309,8 @@
                 <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Dashboard</h1>
             </a>
 
-            {{-- ── SÉLECTEUR D'ENVIRONNEMENT (Admin réseau) ── --}}
-            @if($isAdmin)
+            {{-- ── SÉLECTEUR D'ENVIRONNEMENT (Admin réseau - Uniquement sur Home) ── --}}
+            @if($isAdmin && request()->routeIs('home'))
                 <div x-data="{ envOpen: false }" class="fixed top-4 left-[250px] z-50">
                     
                     <button @click="envOpen = !envOpen"
