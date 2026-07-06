@@ -42,12 +42,25 @@ class AppServiceProvider extends ServiceProvider
             // 2. On détermine si on est sur la vue "Réseau Global" ou dans une "Franchise"
             $isGlobalView = empty($currentGroupKey) || $currentGroupKey === 'retd';
 
-            // 3. 🔐 LOGIQUE DE CLOISONNEMENT DES BOUTONS
-            $canSeePilotage    = $isAdmin && $isGlobalView; // Seulement Global
-            $canSeeSuperset    = $isAdmin && $isGlobalView; // Seulement Global
-            $canSeeDolibarr    = $isAdmin && $isGlobalView; // Seulement Global
-            $canSeeGestionClub = !$isGlobalView;            // Seulement en Franchise
-            $canSeeIA          = true;                      // Universel
+            // 3. 🚀 TES RÈGLES DE PERMISSIONS (Simplifiées)
+            
+            if ($isAdmin) {
+                // L'admin (groupe 'retd') a le passe-partout : il voit ABSOLUMENT TOUT
+                $canSeePilotage    = true;
+                $canSeeSuperset    = true;
+                $canSeeGestionClub = true; // Back Office
+                $canSeeIA          = true;
+                $canSeeDolibarr    = true;
+            } else {
+                // Les autres (Franchises) voient uniquement leurs 3 outils dédiés
+                $canSeePilotage    = true;
+                $canSeeSuperset    = true; // (Lié au Pilotage)
+                $canSeeGestionClub = true; // (Back Office)
+                $canSeeIA          = true;
+                
+                // On leur bloque l'accès aux outils exclusifs Admin
+                $canSeeDolibarr    = false;
+            }
             
             $supersetUrl = env('SUPERSET_URL', '#');
             $dolibarrUrl = env('DOLIBARR_URL', '#');
@@ -56,6 +69,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with([
                 'isAdmin'           => $isAdmin,
+                'isGlobalView'      => $isGlobalView,
                 'canSeePilotage'    => $canSeePilotage,
                 'canSeeSuperset'    => $canSeeSuperset,
                 'canSeeGestionClub' => $canSeeGestionClub,
