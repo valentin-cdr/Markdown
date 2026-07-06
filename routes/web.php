@@ -52,15 +52,13 @@ Route::middleware('auth')->group(function () {
     
     // Route pour permettre à l'admin de changer d'environnement/groupe à la volée
     Route::get('/groups/switch/{key}', [ConfigurationController::class, 'switchGroup'])->name('groups.switch');
-
     
-
     Route::get('/switch-environment', function (Request $request) {
         $group = $request->query('group');
         
-        // On modifie LA VRAIE variable attendue par ton application
-        if (empty($group)) {
-            session()->forget('active_group_key');
+        if (empty($group) || $group === 'global' || $group === 'retd') {
+            // On stocke explicitement 'retd' pour le réseau global
+            session(['active_group_key' => 'retd']);
         } else {
             session(['active_group_key' => $group]);
         }
