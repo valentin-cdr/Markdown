@@ -300,12 +300,6 @@
                 {{-- Ligne 1 : Les textes (Label à gauche, Auteur à droite) --}}
                 <div class="flex justify-between items-baseline mb-2">
                     <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Titre du document</label>
-                    
-                    @if(isset($document) && $document->user && $document->user_id !== auth()->id())
-                        <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                            Partagé par {{ $document->user->name }}
-                        </p>
-                    @endif
                 </div>
 
                 {{-- Ligne 2 : Le champ de saisie (prend 100% de la largeur) --}}
