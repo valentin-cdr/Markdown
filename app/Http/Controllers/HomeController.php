@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Models\Document;
+use App\Models\Group;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
@@ -32,14 +34,39 @@ class HomeController extends Controller
         $apiDocuments = collect(); 
         try {
             $response = Http::withToken(env('RETD_API_TOKEN'))
+                            ->withHeaders([
+                                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                                'Pragma' => 'no-cache'
+                            ])
                             ->timeout(5)
-                            ->get(env('RETD_API_URL'));
+                            ->get(env('RETD_API_URL'), [
+                                '_t' => now()->timestamp 
+                            ]);
 
             if ($response->successful()) {
                 $apiDocuments = collect($response->json());
             }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Erreur de connexion à l'API : " . $e->getMessage());
+        }
+
+        if ($response->successful()) {
+            $apiGroups = $response->json();
+            
+            // 1. Tu mets à jour ta base de données (peu importe comment)
+            foreach ($apiGroups as $apiGroup) {
+                Group::updateOrCreate(
+                    ['key' => $apiGroup['key']],
+                    ['name' => $apiGroup['name'], /* ... */]
+                );
+            }
+
+            // 2. 🚀 COUP DE BALAI MAGIQUE ICI
+            // Dès que la base est à jour, on vide le cache. 
+            // Au prochain F5 d'un utilisateur, le menu affichera les nouveaux groupes !
+            Cache::forget('groups_config');
+            
+            $this->info('Synchronisation réussie et cache vidé !');
         }
 
         $tab = $request->input('tab', 'my_documents'); 

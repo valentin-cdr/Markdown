@@ -75,6 +75,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard')</title>
 
+    {{-- 🚀 FAVICON DYNAMIQUE (Avec Anti-Cache pour forcer l'affichage) --}}
+    @if($currentGroupKey && $currentGroupKey !== 'retd' && isset($navGroupBrand['key']))
+        <link rel="icon" type="image/png" href="{{ asset('images/' . $navGroupBrand['key'] . '.png') }}?v={{ time() }}">
+    @else
+        <link rel="icon" type="image/png" href="{{ asset('images/retd_blanc.png') }}?v={{ time() }}">
+    @endif
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    {{-- ... la suite de ton head ... --}}
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -330,7 +340,8 @@
                         @endif
                         
                         <span class="text-xs font-bold tracking-tight truncate text-gray-700 dark:text-gray-200">
-                            {{ $isGlobalView ? 'Réseau Global' : ($navGroupBrand['name'] ?? 'Inconnu') }}
+                            {{-- 🚀 CORRECTION 1 ICI --}}
+                            {!! $isGlobalView ? 'Réseau Global' : ($navGroupBrand['name'] ?? 'Inconnu') !!}
                         </span>
                         <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200"
                             :class="envOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,7 +376,8 @@
                                 
                                 <img src="{{ asset('images/' . $env->key . '.png') }}" alt="" class="h-4 w-4 rounded object-contain shrink-0" onerror="this.style.display='none'">
                                 
-                                <span class="flex-1 truncate" @if($isActive) style="color: {{ $env->scroll_light ?? 'var(--brand-primary)' }}" @endif>{{ $env->name }}</span>
+                                {{-- 🚀 CORRECTION 2 ICI --}}
+                                <span class="flex-1 truncate" @if($isActive) style="color: {{ $env->scroll_light ?? 'var(--brand-primary)' }}" @endif>{!! $env->name !!}</span>
                                 @if($isActive)<span class="text-[10px]">✓</span>@endif
                             </a>
                         @endforeach

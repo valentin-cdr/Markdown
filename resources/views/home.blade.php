@@ -1,30 +1,34 @@
 @extends('layouts.app')
+
+@section('title', 'Glossaire')
+
+@section('styles')
 <style>
     /* --- Barre de défilement sur mesure --- */
 
     /* Pour Firefox */
     .custom-scrollbar {
         scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 transparent; /* Couleur de la barre et du fond */
+        scrollbar-color: #cbd5e1 transparent;
     }
     .dark .custom-scrollbar {
-        scrollbar-color: #475569 transparent; /* Couleurs pour le mode sombre */
+        scrollbar-color: #475569 transparent;
     }
 
     /* Pour Chrome, Edge, Safari */
     .custom-scrollbar::-webkit-scrollbar {
-        height: 6px; /* Barre horizontale très fine */
+        height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent; /* Fond invisible */
+        background: transparent;
         border-radius: 10px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1; /* Gris clair */
+        background-color: #cbd5e1;
         border-radius: 10px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: #94a3b8; /* Gris un peu plus foncé au survol */
+        background-color: #94a3b8;
     }
 
     /* Mode sombre pour Chrome, Edge, Safari */
@@ -35,7 +39,7 @@
         background-color: #64748b; 
     }
 </style>
-@section('title', 'Tableau de bord')
+@endsection
 
 @section('content')
 <main class="max-w-6xl w-full mx-auto p-6 flex-1">
