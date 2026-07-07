@@ -274,11 +274,6 @@
                 <h1 class="text-gray-900 dark:text-white text-xl font-bold transition-colors truncate">{{ $document->title }}</h1>
             </div>
 
-            {{-- BLOC DROITE : Partagé par (Aligné en haut) --}}
-            <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap pt-0.5">
-                Partagé par {{ $document->user->name }}
-            </p>
-            
         </div>
 
         <div class="mb-6">
@@ -288,9 +283,12 @@
         </div>
 
         <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-5">
-            <div></div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 italic">
+                Modifié le {{ $document->updated_at->format('d/m/Y') }}
+            </div>
             <div class="flex space-x-3">
-                <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('home') }}" class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 px-5 rounded-xl text-sm transition">
+                <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('home') }}" 
+                class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 px-5 rounded-xl text-sm transition hover:bg-gray-200 dark:hover:bg-gray-600">
                     Retour à la bibliothèque
                 </a>
             </div>

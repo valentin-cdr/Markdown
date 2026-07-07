@@ -168,18 +168,23 @@ class DocumentController extends Controller
         return redirect()->route('home')->with('success', 'Document supprimé avec succès !');
     }
 
-    public function show(Document $document) {
-        $document = Document::findOrFail($document->id);
+    public function show($id) 
+    {
+        // 1. On récupère le document en ignorant les filtres de groupe (Global Scopes)
+        $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
 
+        // 2. Ta logique de sécurité existante (très propre !)
         $isOwner = $document->user_id === auth()->id();
         $isSharedWithMe = $document->sharedWith()->where('user_id', auth()->id())->exists();
         $isRetdGroup = in_array('retd', session('keycloak_groups', []));
 
+        // 3. Le couperet
         if (!$isOwner && !$isSharedWithMe && !$isRetdGroup) {
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation d'accéder à ce document.");
         }
 
-        $user = Auth::user();
+        // 4. Préparation de la vue
+        $user = \Illuminate\Support\Facades\Auth::user();
         $groups = session('keycloak_groups', []);
         
         return view('documents.show', compact('user', 'groups', 'document'));
