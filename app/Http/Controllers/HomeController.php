@@ -29,11 +29,13 @@ class HomeController extends Controller
         }
 
         // --------------------------------------------------------
-        // 🌐 RÉCUPÉRATION DES DONNÉES DE L'API EXTERNE
+        // 🌐 RÉCUPÉRATION DES DONNÉES DE L'API EXTERNE (Anti-Cache)
         // --------------------------------------------------------
         $apiDocuments = collect(); 
+
         try {
-            $response = Http::withToken(env('RETD_API_TOKEN'))
+            // 1. La requête HTTP (avec l'anti-cache)
+            $response = \Illuminate\Support\Facades\Http::withToken(env('RETD_API_TOKEN'))
                             ->withHeaders([
                                 'Cache-Control' => 'no-cache, no-store, must-revalidate',
                                 'Pragma' => 'no-cache'
@@ -43,30 +45,22 @@ class HomeController extends Controller
                                 '_t' => now()->timestamp 
                             ]);
 
+            // 2. On vérifie SI la réponse est un succès À L'INTÉRIEUR du try
             if ($response->successful()) {
+                
                 $apiDocuments = collect($response->json());
+                
+                // Si tu avais besoin de vider le cache des groupes, ça se passe ici :
+                // \Illuminate\Support\Facades\Cache::forget('groups_config');
+
+            } else {
+                // Optionnel : Enregistrer si l'API répond, mais avec une erreur (ex: 404, 401)
+                \Illuminate\Support\Facades\Log::warning("L'API a renvoyé une erreur : " . $response->status());
             }
+
         } catch (\Exception $e) {
+            // 3. Si le serveur d'en face est totalement planté ou injoignable, on arrive ici
             \Illuminate\Support\Facades\Log::error("Erreur de connexion à l'API : " . $e->getMessage());
-        }
-
-        if ($response->successful()) {
-            $apiGroups = $response->json();
-            
-            // 1. Tu mets à jour ta base de données (peu importe comment)
-            foreach ($apiGroups as $apiGroup) {
-                Group::updateOrCreate(
-                    ['key' => $apiGroup['key']],
-                    ['name' => $apiGroup['name'], /* ... */]
-                );
-            }
-
-            // 2. 🚀 COUP DE BALAI MAGIQUE ICI
-            // Dès que la base est à jour, on vide le cache. 
-            // Au prochain F5 d'un utilisateur, le menu affichera les nouveaux groupes !
-            Cache::forget('groups_config');
-            
-            $this->info('Synchronisation réussie et cache vidé !');
         }
 
         $tab = $request->input('tab', 'my_documents'); 
