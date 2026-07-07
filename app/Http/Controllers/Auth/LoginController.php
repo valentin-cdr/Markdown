@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Franchise;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -38,19 +38,17 @@ class LoginController extends Controller
             $isSuperAdmin  = in_array('retd', $userGroups);
             $assignedGroup = $isSuperAdmin ? 'retd' : ($userGroups[0] ?? null);
 
-            $targetFranchiseId = null;
+            $targetGroupId = null;
             if (! $isSuperAdmin) {
-                $matchingFranchise = Franchise::all()->first(function ($franchise) use ($userGroups) {
-                    $allowed = $franchise->allowed_ldap_groups;
-                    if (is_string($allowed)) $allowed = json_decode($allowed, true);
-                    $allowed = is_array($allowed) ? $allowed : [];
-                    return ! empty(array_intersect($allowed, $userGroups));
+                // On cherche le groupe en base de données dont la "key" correspond à l'un des groupes Keycloak de l'utilisateur
+                $matchingGroup = Group::all()->first(function ($group) use ($userGroups) {
+                    return in_array($group->key, $userGroups);
                 });
 
-                if (! $matchingFranchise) {
-                    throw new \Exception("Votre compte n'est rattaché à aucune franchise active.");
+                if (! $matchingGroup) {
+                    throw new \Exception("Votre compte n'est rattaché à aucun environnement/groupe actif.");
                 }
-                $targetFranchiseId = $matchingFranchise->id;
+                $targetGroupId = $matchingGroup->id;
             }
 
             // 👉 NOUVEAU : On récupère l'identifiant de connexion Keycloak (ex: 'jsmith')
@@ -60,9 +58,12 @@ class LoginController extends Controller
                 ['username' => $username], // 👈 On fait la recherche sur l'identifiant
                 [
                     'name'         => $keycloakUser->getName() ?? $username,
-                    'email'        => $keycloakUser->getEmail(), // Sera null si inexistant
+                    'email'        => $keycloakUser->getEmail(), 
                     'group_ldap'   => $assignedGroup,
-                    'franchise_id' => $targetFranchiseId,
+                    
+                    // 🚀 CORRECTION ICI : on utilise group_id au lieu de franchise_id
+                    'franchise_id'     => $targetGroupId, 
+                    
                     'password'     => bcrypt(Str::random(24)),
                 ]
             );

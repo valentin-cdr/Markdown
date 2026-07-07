@@ -13,5 +13,6 @@ Artisan::command('inspire', function () {
 // 🤖 TES TÂCHES AUTOMATIQUES
 // --------------------------------------------------------
 
+// 👈 2. Remplacer 'app:ton-nom-de-commande' par ta vraie commande
 Schedule::command('retd:sync-franchises')->everyFiveMinutes();
 

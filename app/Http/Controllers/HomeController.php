@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Group;
 use Illuminate\Support\Facades\Cache;
 
+
 class HomeController extends Controller
 {
     public function index(Request $request)
