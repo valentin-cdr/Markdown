@@ -100,7 +100,6 @@ class DocumentController extends Controller
 
     public function update(Request $request, $id)
     {
-        // 🚨 FIX 404 : On va chercher le document manuellement sans le scope global de groupe
         $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
 
         if (!$this->canEditDocument($document)) {
