@@ -156,7 +156,12 @@ class DocumentController extends Controller
                         ->with('success', 'Document mis à jour avec succès.');
     }
 
-    public function destroy(Document $document) {
+    public function destroy($id) { 
+        
+        // 🚀 2. On cherche le document en forçant Laravel à ignorer TOUS les filtres (les Global Scopes)
+        $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
+
+        // 3. Le reste de ton code ne change pas !
         $isAdmin = in_array('retd', session('keycloak_groups', []));
         $isOwner = $document->user_id === Auth::id();
 
@@ -165,6 +170,7 @@ class DocumentController extends Controller
         }
 
         $document->delete();
+        
         return redirect()->route('home')->with('success', 'Document supprimé avec succès !');
     }
 
