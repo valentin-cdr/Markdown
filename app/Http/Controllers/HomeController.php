@@ -226,6 +226,23 @@ class HomeController extends Controller
             }
             
         } else {
+            // 🚨 LE RADAR COMPLET CORRIGÉ
+            if (auth()->check() && $tab === 'my_documents') {
+                $userGroupKey = 'AUCUN_GROUPE_TROUVÉ';
+                if (auth()->user()->franchise_id) {
+                    $g = \App\Models\Group::find(auth()->user()->franchise_id);
+                    $userGroupKey = $g ? $g->key : 'ID_INCONNU_EN_BDD';
+                }
+
+                dd([
+                    '1_Est_ce_un_lecteur_detecte_?'                  => $isLecteur ?? 'Variable $isLecteur non définie',
+                    '2_Mon_franchise_id_sur_le_serveur'              => auth()->user()->franchise_id,
+                    '3_La_cle_de_groupe_associee_a_mon_compte'       => $userGroupKey,
+                    '4_Nombre_de_docs_avec_cette_cle_en_BDD_serveur' => \App\Models\Document::withoutGlobalScopes()->where('group_key', $userGroupKey)->count(),
+                    '5_Les_group_keys_des_7_docs_sur_le_serveur'     => \App\Models\Document::withoutGlobalScopes()->pluck('group_key')->toArray(),
+                    '6_Mes_groupes_Keycloak_actuels'                 => session('keycloak_groups', []),
+                ]);
+            }
             $documentsToDisplay = $query->paginate(12)->withQueryString();
         }
 
