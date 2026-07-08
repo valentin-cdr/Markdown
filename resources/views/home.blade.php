@@ -43,7 +43,7 @@
 
 @section('content')
 @php
-    // 🕵️‍♂️ Détection automatique du rôle lecteur via la session Keycloak
+    // 🕵️‍♂️ 1. Détection du rôle lecteur
     $sessionGroups = session('keycloak_groups', []);
     $isLecteur = false;
     foreach ($sessionGroups as $g) {
@@ -51,6 +51,13 @@
             $isLecteur = true;
             break;
         }
+    }
+
+    // 🏷️ 2. Récupération dynamique du nom du groupe pour l'onglet
+    $customTabTitle = 'Mes documents';
+    if ($isLecteur && auth()->check() && auth()->user()->franchise_id) {
+        $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
+        $customTabTitle = $userGroup ? 'Documents ' . $userGroup->name : 'Documents du groupe';
     }
 @endphp
 <main class="max-w-6xl w-full mx-auto p-6 flex-1">
@@ -109,7 +116,8 @@
     <div class="border-b border-gray-200 dark:border-gray-700 mb-8 transition-colors duration-200">
         <nav class="-mb-px flex space-x-8">
             <a href="{{ route('home', ['tab' => 'my_documents']) }}" class="{{ $tab === 'my_documents' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
-                Mes documents
+                {{-- 🚀 TEXTE DYNAMIQUE ICI --}}
+                {{ $customTabTitle }}
             </a>
             <a href="{{ route('home', ['tab' => 'shared']) }}" class="{{ $tab === 'shared' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
                 Partagés avec moi

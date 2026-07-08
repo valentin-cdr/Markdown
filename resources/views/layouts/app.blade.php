@@ -15,6 +15,7 @@
     });
 
     // 4. 🚀 RÉSOLUTION DU GROUPE ACTIF (Unifiée avec l'application)
+    // 4. 🚀 RÉSOLUTION DU GROUPE ACTIF (Unifiée avec l'application)
     $navGroupBrand = null;
     $currentGroupKey = null; 
 
@@ -22,8 +23,8 @@
         $user = auth()->user();
 
         // A. Priorité absolue au sélecteur forcé par l'admin (via le bouton)
-        if (session()->has('admin_forced_group')) {
-            $forcedKey = session('admin_forced_group');
+        if (session()->has('active_group_key')) { // 🌟 CORRIGÉ ICI
+            $forcedKey = session('active_group_key'); // 🌟 CORRIGÉ ICI
             if ($forcedKey && $forcedKey !== 'global' && $forcedKey !== 'retd') {
                 $currentGroupKey = $forcedKey;
                 if (isset($groupBrandConfig[$currentGroupKey])) {
@@ -33,7 +34,6 @@
         } 
         // B. Sinon, on utilise le vrai groupe de l'utilisateur stocké en BDD !
         elseif (!empty($user->franchise_id)) {
-            // Recherche du groupe correspondant à l'ID en base de données
             $matchedGroup = collect($groupBrandConfig)->firstWhere('id', $user->franchise_id);
             if ($matchedGroup) {
                 $navGroupBrand = $matchedGroup;
