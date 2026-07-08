@@ -178,19 +178,40 @@ class DocumentController extends Controller
         // 1. On récupère le document en ignorant les filtres de groupe (Global Scopes)
         $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
 
-        // 2. Ta logique de sécurité existante (très propre !)
+        // 2. Ta logique de sécurité existante
         $isOwner = $document->user_id === auth()->id();
         $isSharedWithMe = $document->sharedWith()->where('user_id', auth()->id())->exists();
-        $isRetdGroup = in_array('retd', session('keycloak_groups', []));
+        
+        $groups = session('keycloak_groups', []);
+        $isRetdGroup = in_array('retd', $groups);
 
-        // 3. Le couperet
-        if (!$isOwner && !$isSharedWithMe && !$isRetdGroup) {
+        // 🚀 3. NOUVEAU : Autorisation pour les profils Lecteurs du même groupe
+        $isLecteurOfSameGroup = false;
+        
+        // A. On détecte si l'utilisateur connecté est un lecteur
+        $isLecteur = false;
+        foreach ($groups as $g) {
+            if (str_contains(strtolower($g), 'lecteur')) {
+                $isLecteur = true;
+                break;
+            }
+        }
+
+        // B. Si c'est un lecteur, on vérifie qu'il fait partie du même groupe que le document
+        if ($isLecteur && auth()->user()->franchise_id) {
+            $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
+            if ($userGroup && $document->group_key === $userGroup->key) {
+                $isLecteurOfSameGroup = true;
+            }
+        }
+
+        // 4. Le couperet mis à jour avec le passe-partout lecteur
+        if (!$isOwner && !$isSharedWithMe && !$isRetdGroup && !$isLecteurOfSameGroup) {
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation d'accéder à ce document.");
         }
 
-        // 4. Préparation de la vue
+        // 5. Préparation de la vue
         $user = \Illuminate\Support\Facades\Auth::user();
-        $groups = session('keycloak_groups', []);
         
         return view('documents.show', compact('user', 'groups', 'document'));
     }

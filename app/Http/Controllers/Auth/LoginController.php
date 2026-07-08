@@ -48,20 +48,16 @@ class LoginController extends Controller
             $hasGroupError = false;
 
             if (!$isSuperAdmin) {
-                // 🚀 RECHERCHE INTELLIGENTE : Gère les variantes comme "ia_onair" pour "on-air"
                 $matchingGroup = \App\Models\Group::all()->first(function ($group) use ($userGroups) {
-                    
-                    // 1. On nettoie la clé BDD (ex: "on-air" devient "onair")
-                    $cleanBddKey = preg_replace('/[^a-z0-9]/', '', strtolower($group->key));
+                    $dbKey = strtolower($group->key); // ex: 'on-air', 'lappart-fitness', 'rituel'
 
-                    foreach ($userGroups as $keycloakGroup) {
-                        // 2. On nettoie le groupe Keycloak (ex: "ia_onair" devient "iaonair")
-                        $cleanKeycloakGroup = preg_replace('/[^a-z0-9]/', '', strtolower($keycloakGroup));
+                    foreach ($userGroups as $kcGroup) {
+                        $kcGroup = strtolower($kcGroup); // ex: 'glossaire_lecteur_appart'
 
-                        // 3. Si "onair" est écrit à l'intérieur de "iaonair", c'est un match !
-                        if (!empty($cleanBddKey) && str_contains($cleanKeycloakGroup, $cleanBddKey)) {
-                            return true;
-                        }
+                        // Le dictionnaire de traduction personnalisé :
+                        if ($dbKey === 'on-air' && str_contains($kcGroup, 'onair')) return true;
+                        if ($dbKey === 'lappart-fitness' && str_contains($kcGroup, 'appart')) return true;
+                        if ($dbKey === 'rituel' && str_contains($kcGroup, 'rituel')) return true;
                     }
 
                     return false;
@@ -70,24 +66,22 @@ class LoginController extends Controller
                 if ($matchingGroup) {
                     $targetGroupId = $matchingGroup->id;
                 } else {
-                    // Au lieu de bloquer tout de suite, on note l'erreur pour bloquer APRÈS la mise à jour
                     $hasGroupError = true;
                 }
             }
 
-            // 👉 Récupération de l'identifiant Keycloak (indispensable pour ton système)
+            // 👉 Récupération de l'identifiant Keycloak
             $username = $keycloakUser->getNickname() ?? $keycloakUser->getId();
 
-            // 5. Création / mise à jour utilisateur (Le nettoyage se fait ici !)
-            // On utilise updateOrCreate qui gère la création ET la mise à jour proprement
+            // 5. Création / mise à jour utilisateur
             $user = \App\Models\User::updateOrCreate(
-                ['username' => $username], // On cherche toujours par username
+                ['username' => $username],
                 [
-                    'name'       => $keycloakUser->getName() ?? $username,
-                    'email'      => $keycloakUser->getEmail(),
-                    'group_ldap' => $assignedGroup,
-                    'franchise_id'   => $targetGroupId,
-                    'password'   => bcrypt(\Illuminate\Support\Str::random(24)),
+                    'name'         => $keycloakUser->getName() ?? $username,
+                    'email'        => $keycloakUser->getEmail(),
+                    'group_ldap'   => $assignedGroup, 
+                    'franchise_id' => $targetGroupId, // On utilise bien franchise_id pour ta BDD
+                    'password'     => bcrypt(\Illuminate\Support\Str::random(24)),
                 ]
             );
 

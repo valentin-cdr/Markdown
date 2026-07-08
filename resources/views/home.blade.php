@@ -42,6 +42,17 @@
 @endsection
 
 @section('content')
+@php
+    // 🕵️‍♂️ Détection automatique du rôle lecteur via la session Keycloak
+    $sessionGroups = session('keycloak_groups', []);
+    $isLecteur = false;
+    foreach ($sessionGroups as $g) {
+        if (str_contains(strtolower($g), 'lecteur')) {
+            $isLecteur = true;
+            break;
+        }
+    }
+@endphp
 <main class="max-w-6xl w-full mx-auto p-6 flex-1">
     
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
@@ -86,9 +97,11 @@
                 </div>
             </form>
 
-            <a href="{{ route('documents.create') }}" class="inline-flex items-center justify-center w-full sm:w-auto h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition whitespace-nowrap shadow-sm">
-                + Nouveau
-            </a>
+            @if(!$isLecteur)
+                <a href="{{ route('documents.create') }}" class="inline-flex items-center justify-center w-full sm:w-auto h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition whitespace-nowrap shadow-sm">
+                    + Nouveau
+                </a>
+            @endif
             
         </div>
     </div>
@@ -413,25 +426,29 @@
                                 
                                 @if($tab === 'my_documents')
                                     <div class="flex items-center gap-2">
-                                        {{-- Bouton Partager (Icône) --}}
-                                        <a href="{{ route('documents.share.form', $doc->id) }}" title="Partager" 
-                                        class="p-1.5 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition flex items-center justify-center">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                            </svg>
-                                        </a>
+                                        {{-- Bouton Partager (Masqué pour le lecteur) --}}
+                                        @if(!$isLecteur)
+                                            <a href="{{ route('documents.share.form', $doc->id) }}" title="Partager" 
+                                            class="p-1.5 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition flex items-center justify-center">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                </svg>
+                                            </a>
+                                        @endif
 
-                                        {{-- Bouton Consulter (Texte) --}}
+                                        {{-- Bouton Consulter (Visible pour tout le monde) --}}
                                         <a href="{{ route('documents.show', $doc->id) }}" 
                                         class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">
                                             Consulter
                                         </a>
 
-                                        {{-- Bouton Éditer (Texte) --}}
-                                        <a href="{{ route('documents.edit', $doc->id) }}" 
-                                        class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">
-                                            Éditer
-                                        </a>
+                                        {{-- Bouton Éditer (Masqué pour le lecteur) --}}
+                                        @if(!$isLecteur)
+                                            <a href="{{ route('documents.edit', $doc->id) }}" 
+                                            class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">
+                                                Éditer
+                                            </a>
+                                        @endif
                                     </div>
                                 @else
                                     {{-- Le texte est centré verticalement par rapport au bouton --}}

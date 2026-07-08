@@ -7,60 +7,64 @@
     }
 
     // 2. SÉCURISATION ADMIN
-    $isAdmin = in_array('retd', $userGroups); 
+    $isAdmin = in_array('retd', $userGroups) || in_array('glossaire', $userGroups); 
 
-    // 3. CONFIGURATION DES GROUPES
+    // 3. CONFIGURATION DES GROUPES (Mise en cache)
     $groupBrandConfig = \Illuminate\Support\Facades\Cache::remember('groups_config', 3600, function () {
         return \App\Models\Group::all()->keyBy('key')->toArray();
     });
 
-    // 4. RÉSOLUTION DU GROUPE ACTIF
+    // 4. 🚀 RÉSOLUTION DU GROUPE ACTIF (Unifiée avec l'application)
     $navGroupBrand = null;
     $currentGroupKey = null; 
 
-    // Si on a une clé en session (définie par notre route switch)
-    if (session()->has('active_group_key')) {
-        $forcedKey = session('active_group_key');
-        
-        // Si la clé est 'global' ou 'retd', on reste sur le réseau global
-        if ($forcedKey === 'global' || $forcedKey === 'retd' || empty($forcedKey)) {
-            $currentGroupKey = 'retd';
-        } elseif (isset($groupBrandConfig[$forcedKey])) {
-            $navGroupBrand = $groupBrandConfig[$forcedKey];
-            $currentGroupKey = $forcedKey;
-        }
-    } else {
-        // Mode automatique par défaut (uniquement s'il n'y a pas de session active)
-        $matchingGroups = array_intersect($userGroups, array_keys($groupBrandConfig));
-        if (!empty($matchingGroups)) {
-            $firstMatch = reset($matchingGroups);
-            $navGroupBrand = $groupBrandConfig[$firstMatch];
-            $currentGroupKey = $firstMatch;
-        } else {
-            $currentGroupKey = 'retd'; // Par défaut global
+    if (auth()->check()) {
+        $user = auth()->user();
+
+        // A. Priorité absolue au sélecteur forcé par l'admin (via le bouton)
+        if (session()->has('admin_forced_group')) {
+            $forcedKey = session('admin_forced_group');
+            if ($forcedKey && $forcedKey !== 'global' && $forcedKey !== 'retd') {
+                $currentGroupKey = $forcedKey;
+                if (isset($groupBrandConfig[$currentGroupKey])) {
+                    $navGroupBrand = $groupBrandConfig[$currentGroupKey];
+                }
+            }
+        } 
+        // B. Sinon, on utilise le vrai groupe de l'utilisateur stocké en BDD !
+        elseif (!empty($user->franchise_id)) {
+            // Recherche du groupe correspondant à l'ID en base de données
+            $matchedGroup = collect($groupBrandConfig)->firstWhere('id', $user->franchise_id);
+            if ($matchedGroup) {
+                $navGroupBrand = $matchedGroup;
+                $currentGroupKey = $matchedGroup['key'];
+            }
         }
     }
 
+    // Si aucune clé n'est trouvée, on retombe par défaut sur le Global RETD
+    if (empty($currentGroupKey)) {
+        $currentGroupKey = 'retd';
+    }
+
     // 5. VARIABLES POUR LE SÉLECTEUR VISUEL
-    $isGlobalView = empty($currentGroupKey) || $currentGroupKey === 'retd';
+    $isGlobalView = $currentGroupKey === 'retd';
     $allGroups = \App\Models\Group::where('key', '!=', 'retd')->orderBy('name')->get();
 
-    // 6. 🚀 RÈGLES DES PERMISSIONS DU MENU BURGER
-    
+    // 6. RÈGLES DES PERMISSIONS DU MENU BURGER
     if ($isAdmin && $isGlobalView) {
-        // 🌍 L'ADMIN SUR LE SÉLECTEUR "RÉSEAU GLOBAL"
+        // L'ADMIN SUR LE SÉLECTEUR "RÉSEAU GLOBAL"
         $canSeePilotage    = true;
         $canSeeSuperset    = true;
         $canSeeDolibarr    = true;
         $canSeeGestionClub = true;
         $canSeeIA          = true;
-    } 
-    else {
-        // 🏢 L'ADMIN QUAND IL RENTRE DANS UNE FRANCHISE SPÉCIFIQUE
+    } else {
+        // UTILISATEUR EN FRANCHISE OU ADMIN EN RECHERCHE SPECIFIQUE
         $canSeePilotage    = true; 
         $canSeeSuperset    = true;
-        $canSeeGestionClub = true; // Apparition du Back Office
-        $canSeeDolibarr    = false; // Disparition de Dolibarr
+        $canSeeGestionClub = true; 
+        $canSeeDolibarr    = false; 
         $canSeeIA          = true;
     }
 

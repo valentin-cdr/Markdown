@@ -74,6 +74,15 @@ class HomeController extends Controller
         $selectedFolder = $request->input('folder');
         $activeGroup = $this->getActiveGroupKey();
 
+        // 🕵️‍♂️ SÉCURISATION : Détection du rôle Lecteur
+        $isLecteur = false;
+        foreach ($groups as $g) {
+            if (str_contains(strtolower($g), 'lecteur')) {
+                $isLecteur = true;
+                break;
+            }
+        }
+
         // --------------------------------------------------------
         // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
         // --------------------------------------------------------
@@ -91,9 +100,32 @@ class HomeController extends Controller
                 
         } else {
             $tab = 'my_documents'; 
-            $query = auth()->user()->documents()
-                ->withCount('sharedWith')
-                ->orderBy('documents.updated_at', 'desc'); 
+            
+            if ($isLecteur) {
+                // 🚀 FIX : On désactive le Scope Global pour sauter l'isolation de l'utilisateur
+                // et on filtre strictement sur le groupe du lecteur
+                $query = \App\Models\Document::withoutGlobalScopes();
+                
+                if (auth()->user()->franchise_id) {
+                    $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
+                    if ($userGroup) {
+                        // On récupère tous les documents de ce groupe spécifique
+                        $query->where('group_key', $userGroup->key);
+                    }
+                } else {
+                    // Sécurité : si le lecteur n'a pas de groupe, il ne voit rien du tout
+                    $query->where('id', 0);
+                }
+                
+                $query->with('user')
+                    ->withCount('sharedWith')
+                    ->orderBy('documents.updated_at', 'desc');
+            } else {
+                // POUR UN UTILISATEUR NORMAL : Uniquement ses propres documents créés
+                $query = auth()->user()->documents()
+                    ->withCount('sharedWith')
+                    ->orderBy('documents.updated_at', 'desc'); 
+            }
         }
 
         // --------------------------------------------------------
