@@ -29,51 +29,80 @@ class LoginController extends Controller
         try {
             $keycloakUser = Socialite::driver('keycloak')->user();
 
-            $rawPayload  = $keycloakUser->getRaw();
-            $userGroups  = $rawPayload['groups'] ?? $keycloakUser->user['groups'] ?? [];
-            $userGroups = array_map(fn ($g) => ltrim($g, '/'), $userGroups);
+            // 1. Récupération des groupes Keycloak
+            $rawPayload = $keycloakUser->getRaw();
+            $userGroups = $rawPayload['groups'] ?? $keycloakUser->user['groups'] ?? [];
+            $userGroups = array_map(fn($g) => ltrim($g, '/'), $userGroups);
 
+            // 2. Stockage des groupes ET du token d'accès en session
             Session::put('keycloak_groups', $userGroups);
+            Session::put('keycloak_token', $keycloakUser->token);
 
-            $isSuperAdmin  = in_array('retd', $userGroups);
-            $assignedGroup = $isSuperAdmin ? 'retd' : ($userGroups[0] ?? null);
+            // 3. Détection Super Admin
+            $isSuperAdmin    = in_array('glossaire', $userGroups);
+            $isLecteur       = in_array('glossaire_lecteur', $userGroups);
+            $assignedGroup   = $isSuperAdmin ? 'retd' : ($userGroups[0] ?? null);
 
+            // 4. Mappage Groupe (Adapté pour ton système de Groupes)
             $targetGroupId = null;
-            if (! $isSuperAdmin) {
-                // On cherche le groupe en base de données dont la "key" correspond à l'un des groupes Keycloak de l'utilisateur
-                $matchingGroup = Group::all()->first(function ($group) use ($userGroups) {
-                    return in_array($group->key, $userGroups);
+            $hasGroupError = false;
+
+            if (!$isSuperAdmin) {
+                // 🚀 RECHERCHE INTELLIGENTE : Gère les variantes comme "ia_onair" pour "on-air"
+                $matchingGroup = \App\Models\Group::all()->first(function ($group) use ($userGroups) {
+                    
+                    // 1. On nettoie la clé BDD (ex: "on-air" devient "onair")
+                    $cleanBddKey = preg_replace('/[^a-z0-9]/', '', strtolower($group->key));
+
+                    foreach ($userGroups as $keycloakGroup) {
+                        // 2. On nettoie le groupe Keycloak (ex: "ia_onair" devient "iaonair")
+                        $cleanKeycloakGroup = preg_replace('/[^a-z0-9]/', '', strtolower($keycloakGroup));
+
+                        // 3. Si "onair" est écrit à l'intérieur de "iaonair", c'est un match !
+                        if (!empty($cleanBddKey) && str_contains($cleanKeycloakGroup, $cleanBddKey)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
                 });
 
-                if (! $matchingGroup) {
-                    throw new \Exception("Votre compte n'est rattaché à aucun environnement/groupe actif.");
+                if ($matchingGroup) {
+                    $targetGroupId = $matchingGroup->id;
+                } else {
+                    // Au lieu de bloquer tout de suite, on note l'erreur pour bloquer APRÈS la mise à jour
+                    $hasGroupError = true;
                 }
-                $targetGroupId = $matchingGroup->id;
             }
 
-            // 👉 NOUVEAU : On récupère l'identifiant de connexion Keycloak (ex: 'jsmith')
+            // 👉 Récupération de l'identifiant Keycloak (indispensable pour ton système)
             $username = $keycloakUser->getNickname() ?? $keycloakUser->getId();
 
-            $user = User::updateOrCreate(
-                ['username' => $username], // 👈 On fait la recherche sur l'identifiant
+            // 5. Création / mise à jour utilisateur (Le nettoyage se fait ici !)
+            // On utilise updateOrCreate qui gère la création ET la mise à jour proprement
+            $user = \App\Models\User::updateOrCreate(
+                ['username' => $username], // On cherche toujours par username
                 [
-                    'name'         => $keycloakUser->getName() ?? $username,
-                    'email'        => $keycloakUser->getEmail(), 
-                    'group_ldap'   => $assignedGroup,
-                    
-                    // 🚀 CORRECTION ICI : on utilise group_id au lieu de franchise_id
-                    'franchise_id'     => $targetGroupId, 
-                    
-                    'password'     => bcrypt(Str::random(24)),
+                    'name'       => $keycloakUser->getName() ?? $username,
+                    'email'      => $keycloakUser->getEmail(),
+                    'group_ldap' => $assignedGroup,
+                    'franchise_id'   => $targetGroupId,
+                    'password'   => bcrypt(\Illuminate\Support\Str::random(24)),
                 ]
             );
 
-            Auth::login($user);
+            // 6. Si l'utilisateur n'a plus de groupe valide, on le jette MAINTENANT
+            if ($hasGroupError) {
+                throw new \Exception("Votre compte d'accès n'est rattaché à aucun environnement/groupe actif. Contactez l'administrateur du laboratoire R&D.");
+            }
+
+            \Illuminate\Support\Facades\Auth::login($user);
+
             return redirect('/home');
 
         } catch (\Exception $e) {
-            Log::error('Erreur Keycloak Callback : ' . $e->getMessage());
-            Auth::logout();
+            \Illuminate\Support\Facades\Log::error('Erreur Keycloak Callback : ' . $e->getMessage());
+            \Illuminate\Support\Facades\Auth::logout();
             return redirect('/login')->withErrors(['error' => $e->getMessage()]);
         }
     }
