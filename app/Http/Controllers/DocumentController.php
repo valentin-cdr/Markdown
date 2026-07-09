@@ -81,7 +81,7 @@ class DocumentController extends Controller
 
         // --- GESTION DES TAGS ---
         $isAdmin = in_array('retd', session('keycloak_groups', []));
-        
+
         $query = $isAdmin ? \App\Models\Document::withoutGlobalScopes() : \App\Models\Document::query();
         $allTagsCollection = $query->pluck('tags')->filter()->flatten();
         
@@ -274,6 +274,13 @@ class DocumentController extends Controller
      */
     protected function getActiveGroupKey()
     {
-        return session('active_group_key', 'retd');
+        $key = session('active_group_key');
+        
+        // Si la session est vide, nulle, ou égale au faux nom 'global', on force la vraie clé 'retd'
+        if (empty($key) || $key === 'global') {
+            return 'retd';
+        }
+        
+        return $key;
     }
 }
