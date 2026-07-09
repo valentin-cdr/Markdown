@@ -82,7 +82,7 @@ class LoginController extends Controller
                 }
             } else {
                 // Sécurité supplémentaire pour initialiser la session du Super Admin par défaut
-                Session::put('active_group_key', 'global'); 
+                Session::put('active_group_key', 'retd'); 
             }
 
             // 👉 Récupération de l'identifiant Keycloak[cite: 1]

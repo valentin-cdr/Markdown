@@ -109,12 +109,18 @@ class DocumentController extends Controller
 
         $tagsArray = array_filter(array_map('trim', $request->tags ?? []));
 
-        // 🔒 Le document prend STRICTEMENT le group_key de l'environnement en cours d'utilisation
+        // 🚀 CORRECTION : On intercepte le vide. Si rien n'est sélectionné, c'est 'retd' par défaut !
+        $finalGroupKey = $this->getActiveGroupKey();
+        if (empty($finalGroupKey) || $finalGroupKey === 'global') {
+            $finalGroupKey = 'retd';
+        }
+
+        // 🔒 Le document prend le group_key sécurisé
         $document = $request->user()->documents()->create([
             'title' => $request->title,
             'content' => $request->content,
             'tags' => empty($tagsArray) ? null : array_values($tagsArray),
-            'group_key' => $this->getActiveGroupKey() 
+            'group_key' => $finalGroupKey 
         ]);
 
         return redirect()->route('home')
