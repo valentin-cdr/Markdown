@@ -108,7 +108,9 @@ class HomeController extends Controller
         // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
         // --------------------------------------------------------
         if ($tab === 'shared') {
+            // 🚀 CORRECTION : On demande à Laravel d'ignorer le filtre de groupe pour les partages
             $query = auth()->user()->sharedDocuments()
+                ->withoutGlobalScopes()
                 ->with('user')
                 ->orderBy('documents.updated_at', 'desc'); 
                 

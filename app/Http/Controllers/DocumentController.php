@@ -50,10 +50,13 @@ class DocumentController extends Controller
     public function create() {
         $user = Auth::user();
         $groups = session('keycloak_groups', []);
+        $isAdmin = in_array('retd', $groups);
         $document = null;
         
-        // CALCUL DES TAGS (Complet, Top 10, et Sélectionnés)
-        $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
+        // 🚀 CORRECTION : Si on est Admin, on désactive le filtre pour récupérer TOUS les tags de la base
+        $query = $isAdmin ? \App\Models\Document::withoutGlobalScopes() : \App\Models\Document::query();
+        $allTagsCollection = $query->pluck('tags')->filter()->flatten();
+        
         $allTags = $allTagsCollection->unique()->values()->sort();
 
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
@@ -77,7 +80,11 @@ class DocumentController extends Controller
         }
 
         // --- GESTION DES TAGS ---
-        $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
+        $isAdmin = in_array('retd', session('keycloak_groups', []));
+        
+        $query = $isAdmin ? \App\Models\Document::withoutGlobalScopes() : \App\Models\Document::query();
+        $allTagsCollection = $query->pluck('tags')->filter()->flatten();
+        
         $allTags = $allTagsCollection->unique()->values()->sort();
 
         $tagsWithCount = array_count_values($allTagsCollection->toArray());
