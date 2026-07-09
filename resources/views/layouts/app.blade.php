@@ -53,19 +53,31 @@
 
     // 6. RÈGLES DES PERMISSIONS DU MENU BURGER
     if ($isAdmin && $isGlobalView) {
-        // L'ADMIN SUR LE SÉLECTEUR "RÉSEAU GLOBAL"
+        // L'ADMIN SUR LE SÉLECTEUR "RÉSEAU GLOBAL" (Accès total à tout)
         $canSeePilotage    = true;
         $canSeeSuperset    = true;
-        $canSeeDolibarr    = true;
         $canSeeGestionClub = true;
+        $canSeeDolibarr    = true;
         $canSeeIA          = true;
+        $canSeeGlossaire   = true;
     } else {
-        // UTILISATEUR EN FRANCHISE OU ADMIN EN RECHERCHE SPECIFIQUE
-        $canSeePilotage    = true; 
-        $canSeeSuperset    = true;
-        $canSeeGestionClub = true; 
-        $canSeeDolibarr    = false; 
-        $canSeeIA          = true;
+        // 1. RÉCUPÉRATION DU GROUPE ACTIF EN BASE DE DONNÉES
+        $activeGroup = \App\Models\Group::where('key', $currentGroupKey)->first();
+        
+        // On récupère le tableau des briques (Laravel le lit direct comme un tableau grâce au $casts !)
+        $briquesActives = $activeGroup ? (array) $activeGroup->briques_actives : [];
+        
+        // On passe tout en minuscules par sécurité
+        $briquesActives = array_map('strtolower', $briquesActives);
+
+        // 2. ATTRIBUTION DYNAMIQUE DES DROITS (in_array regarde dans la vraie BDD)
+        $canSeePilotage    = in_array('pilotage', $briquesActives);
+        $canSeeSuperset    = in_array('superset', $briquesActives);
+        $canSeeGestionClub = in_array('gestion', $briquesActives); 
+        $canSeeIA          = in_array('ia', $briquesActives);
+        $canSeeGlossaire   = in_array('glossaire', $briquesActives);
+        
+        $canSeeDolibarr    = in_array('dolibarr', $briquesActives); 
     }
 
     // Récupération des URLs d'environnement
@@ -282,13 +294,15 @@
                 </a>
             @endif
 
-            <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[var(--brand-primary)] transition">
+            @if ($canSeeGlossaire)
+                <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[var(--brand-primary)] transition">
                 <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 Glossaire
             </a>
-
+            @endif
+            
             <div class="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-4"></div>
 
             <form method="POST" action="{{ route('logout') }}" class="w-full">
