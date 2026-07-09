@@ -44,22 +44,15 @@ class DocumentController extends Controller
 
     public function edit($id)
     {
-        // 1. On vérifie les groupes de l'utilisateur
-        $userGroups = (array) session('keycloak_groups', []);
-        $isAdmin = in_array('retd', $userGroups);
-
-        // 2. On va chercher le document (SANS FILTRE GLOBAL pour éviter la 404)
+        // 1. On va chercher le document (SANS FILTRE GLOBAL)
         $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
 
-        // 3. Sécurité : On vérifie les droits SANS MODIFIER LA SESSION
-        if (!$isAdmin) {
-            // 🔒 Les NON-ADMINS ne peuvent éditer que si le doc appartient à un de leurs groupes
-            if (!in_array($document->group_key, $userGroups)) {
-                abort(404);
-            }
+        // 2. 🚀 CORRECTION : On utilise ta propre fonction centralisée pour vérifier les droits !
+        if (!$this->canEditDocument($document)) {
+            abort(403, "Vous n'avez pas l'autorisation de modifier ce document.");
         }
 
-        // --- GESTION DES TAGS (Pour éviter l'erreur Undefined variable) ---
+        // --- GESTION DES TAGS ---
         $allTagsCollection = \App\Models\Document::pluck('tags')->filter()->flatten();
         $allTags = $allTagsCollection->unique()->values()->sort();
 
@@ -72,7 +65,6 @@ class DocumentController extends Controller
         $pillsTags = collect(array_merge($selectedTags, $top10Tags))->unique()->toArray();
         // --- FIN GESTION DES TAGS ---
 
-        // 4. APPEL DE LA VUE : Ton environnement n'a pas bougé !
         return view('documents.editor', compact('document', 'allTags', 'pillsTags', 'selectedTags'));
     }
 
@@ -175,7 +167,7 @@ class DocumentController extends Controller
 
     public function show($id) 
     {
-        // 1. On récupère le document en ignorant les filtres de groupe (Global Scopes)
+        // 1. On récupère le document en ignorant les filtres de groupe
         $document = \App\Models\Document::withoutGlobalScopes()->findOrFail($id);
 
         // 2. Ta logique de sécurité existante
@@ -185,28 +177,18 @@ class DocumentController extends Controller
         $groups = session('keycloak_groups', []);
         $isRetdGroup = in_array('retd', $groups);
 
-        // 🚀 3. NOUVEAU : Autorisation pour les profils Lecteurs du même groupe
-        $isLecteurOfSameGroup = false;
+        // 🚀 3. CORRECTION : Autorisation globale pour TOUS les membres de la franchise (Créateurs ET Lecteurs)
+        $isMemberOfSameGroup = false;
         
-        // A. On détecte si l'utilisateur connecté est un lecteur
-        $isLecteur = false;
-        foreach ($groups as $g) {
-            if (str_contains(strtolower($g), 'lecteur')) {
-                $isLecteur = true;
-                break;
-            }
-        }
-
-        // B. Si c'est un lecteur, on vérifie qu'il fait partie du même groupe que le document
-        if ($isLecteur && auth()->user()->franchise_id) {
+        if (auth()->check() && auth()->user()->franchise_id) {
             $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
             if ($userGroup && $document->group_key === $userGroup->key) {
-                $isLecteurOfSameGroup = true;
+                $isMemberOfSameGroup = true;
             }
         }
 
-        // 4. Le couperet mis à jour avec le passe-partout lecteur
-        if (!$isOwner && !$isSharedWithMe && !$isRetdGroup && !$isLecteurOfSameGroup) {
+        // 4. Le couperet mis à jour avec le passe-partout de la franchise
+        if (!$isOwner && !$isSharedWithMe && !$isRetdGroup && !$isMemberOfSameGroup) {
             return redirect()->route('home')->with('error', "Vous n'avez pas l'autorisation d'accéder à ce document.");
         }
 

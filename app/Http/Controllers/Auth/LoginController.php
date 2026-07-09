@@ -49,7 +49,7 @@ class LoginController extends Controller
             $isLecteur     = !empty(array_filter($glossaireGroups, fn($g) => str_contains(strtolower($g), 'lecteur')));
             $assignedGroup = $isSuperAdmin ? 'retd' : (reset($glossaireGroups) ?? null);
 
-            // 4. Mappage Groupe ciblé sur les rôles Glossaire[cite: 1]
+            // 4. Mappage Groupe ciblé sur les rôles Glossaire
             $targetGroupId = null;
             $hasGroupError = false;
 
@@ -59,26 +59,30 @@ class LoginController extends Controller
                     $hasGroupError = true;
                 } else {
                     $matchingGroup = \App\Models\Group::all()->first(function ($group) use ($glossaireGroups) {
-                        $dbKey = strtolower($group->key);
+                        $dbKey = strtolower($group->key); 
 
                         foreach ($glossaireGroups as $kcGroup) {
                             $kcGroup = strtolower($kcGroup);
-
-                            // Le dictionnaire de traduction personnalisé :[cite: 1]
                             if ($dbKey === 'on-air' && str_contains($kcGroup, 'onair')) return true;
                             if ($dbKey === 'lappart-fitness' && str_contains($kcGroup, 'appart')) return true;
                             if ($dbKey === 'rituel' && str_contains($kcGroup, 'rituel')) return true;
                         }
-
                         return false;
                     });
 
                     if ($matchingGroup) {
                         $targetGroupId = $matchingGroup->id;
+                        
+                        // 🚀 LA CORRECTION MAGIQUE : On enregistre la clé du groupe pour débloquer les sécurités !
+                        Session::put('active_group_key', $matchingGroup->key);
+                        
                     } else {
                         $hasGroupError = true;
                     }
                 }
+            } else {
+                // Sécurité supplémentaire pour initialiser la session du Super Admin par défaut
+                Session::put('active_group_key', 'global'); 
             }
 
             // 👉 Récupération de l'identifiant Keycloak[cite: 1]
