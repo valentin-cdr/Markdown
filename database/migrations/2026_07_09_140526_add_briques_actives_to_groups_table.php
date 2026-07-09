@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::table('groups', function (Blueprint $table) {
             $table->json('briques_actives')->nullable()->after('name'); 
-            $table->text('superset_url')->nullable()->after('briques_actives');
-            $table->text('dolibarr_url')->nullable()->after('superset_url');
         });
     }
 
