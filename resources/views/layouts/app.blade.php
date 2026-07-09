@@ -51,38 +51,35 @@
     $isGlobalView = $currentGroupKey === 'retd';
     $allGroups = \App\Models\Group::where('key', '!=', 'retd')->orderBy('name')->get();
 
-    // 6. RÈGLES DES PERMISSIONS DU MENU BURGER
+    // 6. RÈGLES DES PERMISSIONS DU MENU BURGER ET URLS
     if ($isAdmin && $isGlobalView) {
-        // L'ADMIN SUR LE SÉLECTEUR "RÉSEAU GLOBAL" (Accès total à tout)
         $canSeePilotage    = true;
         $canSeeSuperset    = true;
         $canSeeGestionClub = true;
         $canSeeDolibarr    = true;
         $canSeeIA          = true;
         $canSeeGlossaire   = true;
+        
+        // Les admins globaux n'ont pas d'URL spécifique par défaut
+        $supersetUrl       = '#'; 
+        $dolibarrUrl       = '#'; 
     } else {
-        // 1. RÉCUPÉRATION DU GROUPE ACTIF EN BASE DE DONNÉES
         $activeGroup = \App\Models\Group::where('key', $currentGroupKey)->first();
         
-        // On récupère le tableau des briques (Laravel le lit direct comme un tableau grâce au $casts !)
         $briquesActives = $activeGroup ? (array) $activeGroup->briques_actives : [];
-        
-        // On passe tout en minuscules par sécurité
         $briquesActives = array_map('strtolower', $briquesActives);
 
-        // 2. ATTRIBUTION DYNAMIQUE DES DROITS (in_array regarde dans la vraie BDD)
         $canSeePilotage    = in_array('pilotage', $briquesActives);
         $canSeeSuperset    = in_array('superset', $briquesActives);
         $canSeeGestionClub = in_array('gestion', $briquesActives); 
         $canSeeIA          = in_array('ia', $briquesActives);
         $canSeeGlossaire   = in_array('glossaire', $briquesActives);
-        
         $canSeeDolibarr    = in_array('dolibarr', $briquesActives); 
-    }
 
-    // Récupération des URLs d'environnement
-    $supersetUrl = env('SUPERSET_URL', '#');
-    $dolibarrUrl = env('DOLIBARR_URL', '#');
+        // 🚀 RÉCUPÉRATION DES URLS
+        $supersetUrl = $activeGroup && $activeGroup->superset_url ? $activeGroup->superset_url : '#';
+        $dolibarrUrl = $activeGroup && $activeGroup->dolibarr_url ? $activeGroup->dolibarr_url : '#';
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -302,7 +299,7 @@
                 Glossaire
             </a>
             @endif
-            
+
             <div class="h-px bg-gray-100 dark:bg-gray-700 my-1 mx-4"></div>
 
             <form method="POST" action="{{ route('logout') }}" class="w-full">

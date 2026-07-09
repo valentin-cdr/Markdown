@@ -12,16 +12,16 @@ return new class extends Migration
     public function up()
     {
         Schema::table('groups', function (Blueprint $table) {
-            $table->json('briques_actives')->nullable()->after('name'); 
+            // Ajoute une colonne pour l'URL, nullable car tous les groupes n'ont pas Superset
             $table->text('superset_url')->nullable()->after('briques_actives');
-            $table->text('dolibarr_url')->nullable()->after('superset_url');
+            $table->text('dolibarr_url')->nullable()->after('superset_url'); 
         });
     }
 
     public function down()
     {
         Schema::table('groups', function (Blueprint $table) {
-            $table->dropColumn(['briques_actives', 'superset_url']);
+            $table->dropColumn('superset_url');
         });
     }
 };
