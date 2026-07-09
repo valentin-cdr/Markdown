@@ -10,13 +10,37 @@ use Illuminate\Support\Facades\Auth;
 class DocumentController extends Controller
 {
     // 🚀 1. SÉCURITÉ MISE À JOUR : Le groupe 'retd' donne un passe-droit total d'édition
+    // 🚀 SÉCURITÉ MISE À JOUR : Édition collaborative pour les Créateurs d'un même groupe
     private function canEditDocument(Document $document)
     {
-        if ($document->user_id === Auth::id()) return true; // Propriétaire
+        // 1. Le propriétaire a toujours le droit
+        if ($document->user_id === Auth::id()) return true; 
         
-        if (in_array('retd', session('keycloak_groups', []))) return true; // Membre du groupe 'retd' (Admin)
+        $groups = session('keycloak_groups', []);
         
-        // Invité avec les droits d'édition accordés individuellement
+        // 2. L'Admin global a toujours le droit
+        if (in_array('retd', $groups)) return true; 
+        
+        // 3. 🚀 NOUVEAU : Les Créateurs peuvent modifier tous les documents de LEUR franchise
+        $isCreator = false;
+        foreach ($groups as $g) {
+            $gLower = strtolower($g);
+            // S'il a le tag glossaire mais PAS le tag lecteur, c'est un créateur
+            if (str_contains($gLower, 'glossaire') && !str_contains($gLower, 'lecteur')) {
+                $isCreator = true;
+                break;
+            }
+        }
+        
+        if ($isCreator && Auth::check() && Auth::user()->franchise_id) {
+            $userGroup = \App\Models\Group::find(Auth::user()->franchise_id);
+            // Si la franchise du créateur correspond à la franchise du document : BINGO !
+            if ($userGroup && $document->group_key === $userGroup->key) {
+                return true; 
+            }
+        }
+
+        // 4. Invité avec les droits d'édition accordés individuellement
         return $document->sharedWith()
                         ->where('user_id', Auth::id())
                         ->wherePivot('can_edit', true)

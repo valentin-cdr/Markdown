@@ -284,11 +284,11 @@
             @if($document && $document->exists)
                 <input type="hidden" name="original_updated_at" value="{{ $document->updated_at->format('Y-m-d H:i:s') }}">
             @endif
-            @if(isset($folder))
-                <input type="hidden" name="folder" value="{{ $folder }}">
+            @if(request()->has('folder'))
+                <input type="hidden" name="folder" value="{{ request('folder') }}">
             @endif
-            @if(isset($tab))
-                <input type="hidden" name="tab" value="{{ $tab }}">
+            @if(request()->has('tab'))
+                <input type="hidden" name="tab" value="{{ request('tab') }}">
             @endif
             @csrf
             <input type="hidden" name="cancel_url" value="{{ $cancelUrl }}">

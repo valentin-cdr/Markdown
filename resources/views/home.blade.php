@@ -388,7 +388,7 @@
                                         
                                         @if($tab === 'shared' && $doc->pivot?->can_edit)
                                             <a href="{{ route('documents.edit', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
-                                        @elseif(in_array($tab, ['group_documents', 'all']) && (auth()->id() === $doc->user_id || $isAdmin))
+                                        @elseif(in_array($tab, ['group_documents', 'all']) && (auth()->id() === $doc->user_id || $isAdmin || $isCreator))
                                             <a href="{{ route('documents.edit', ['document' => $doc->id, 'folder' => $selectedFolder ?? null, 'tab' => $tab]) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 py-1.5 px-3 rounded-lg transition flex items-center shadow-sm">Éditer</a>
                                         @endif
                                     </div>
