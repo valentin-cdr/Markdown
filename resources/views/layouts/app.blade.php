@@ -327,7 +327,19 @@
                 </div>
                 
                 <span class="text-gray-300 dark:text-gray-600 font-light text-xl">|</span>
-                <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Glossaire</h1>
+                <div class="flex items-center gap-2.5">
+                    <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Glossaire</h1>
+                    
+                    {{-- 🚀 BADGES DES GROUPES KEYCLOAK --}}
+                    @php
+                        // CORRECTION : On utilise un nom unique pour ne pas écraser la variable du contrôleur
+                        $keycloakSessionGroups = session('keycloak_groups', []);
+                        
+                        $glossaireGroups = array_filter($keycloakSessionGroups, function($g) {
+                            return str_contains(strtolower($g), 'glossaire');
+                        });
+                    @endphp
+                </div>
             </a>
 
             {{-- ── SÉLECTEUR D'ENVIRONNEMENT (Admin réseau - Uniquement sur Home) ── --}}

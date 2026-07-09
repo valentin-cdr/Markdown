@@ -74,12 +74,33 @@ class HomeController extends Controller
         $selectedFolder = $request->input('folder');
         $activeGroup = $this->getActiveGroupKey();
 
-        // 🕵️‍♂️ SÉCURISATION : Détection du rôle Lecteur
+        // 🕵️‍♂️ SÉCURISATION : Détection fine des rôles Keycloak
         $isLecteur = false;
+        $isCreator = false;
         foreach ($groups as $g) {
-            if (str_contains(strtolower($g), 'lecteur')) {
+            $gLower = strtolower($g);
+            if (str_contains($gLower, 'lecteur')) {
                 $isLecteur = true;
-                break;
+            } elseif (str_contains($gLower, 'glossaire') && !str_contains($gLower, 'lecteur')) {
+                $isCreator = true; // Profil type "glossaire_onair"
+            }
+        }
+
+        // 🎯 ONGLET PAR DÉFAUT : Le lecteur pur arrive sur les documents du groupe, les autres sur "Mes documents"
+        $defaultTab = ($isLecteur && !$isCreator && !$isRetd) ? 'group_documents' : 'my_documents';
+        $tab = $request->input('tab', $defaultTab);
+
+        // Clé du groupe (Compatible avec le switcher de l'Admin)
+        $userGroupKey = null;
+        if (auth()->check()) {
+            // Si on est Admin ET qu'on a un groupe actif en session
+            if ($isRetd && session()->has('active_group_key') && session('active_group_key') !== 'global' && session('active_group_key') !== 'retd') {
+                $userGroupKey = session('active_group_key');
+            } 
+            // Sinon on prend la franchise de l'utilisateur
+            elseif (auth()->user()->franchise_id) {
+                $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
+                $userGroupKey = $userGroup ? $userGroup->key : null;
             }
         }
 
@@ -92,40 +113,33 @@ class HomeController extends Controller
                 ->orderBy('documents.updated_at', 'desc'); 
                 
         } elseif ($tab === 'all' && $isRetd) {
-            // 🌍 REFUGE GLOBAL : Désactivation du Scope Global d'isolation uniquement ici pour l'admin
             $query = \App\Models\Document::withoutGlobalScopes()
                 ->with('user')
                 ->withCount('sharedWith')
                 ->orderBy('documents.updated_at', 'desc');
                 
-        } else {
-            $tab = 'my_documents'; 
+        } elseif ($tab === 'group_documents') {
+            // 🚀 LE NOUVEL ONGLET : Bibliothèque de la franchise (Visible par créateurs et lecteurs)
+            $query = \App\Models\Document::withoutGlobalScopes();
             
-            if ($isLecteur) {
-                // 🚀 FIX : On désactive le Scope Global pour sauter l'isolation de l'utilisateur
-                // et on filtre strictement sur le groupe du lecteur
-                $query = \App\Models\Document::withoutGlobalScopes();
-                
-                if (auth()->user()->franchise_id) {
-                    $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
-                    if ($userGroup) {
-                        // On récupère tous les documents de ce groupe spécifique
-                        $query->where('group_key', $userGroup->key);
-                    }
-                } else {
-                    // Sécurité : si le lecteur n'a pas de groupe, il ne voit rien du tout
-                    $query->where('id', 0);
-                }
-                
-                $query->with('user')
-                    ->withCount('sharedWith')
-                    ->orderBy('documents.updated_at', 'desc');
+            if ($userGroupKey) {
+                $variants = [$userGroupKey];
+                if ($userGroupKey === 'on-air') $variants[] = 'onAir'; // Tolérance de l'ancien format
+                $query->whereIn('group_key', $variants);
             } else {
-                // POUR UN UTILISATEUR NORMAL : Uniquement ses propres documents créés
-                $query = auth()->user()->documents()
-                    ->withCount('sharedWith')
-                    ->orderBy('documents.updated_at', 'desc'); 
+                $query->where('id', 0); // Sécurité anti-fuite
             }
+            
+            $query->with('user')
+                ->withCount('sharedWith')
+                ->orderBy('documents.updated_at', 'desc');
+
+        } else {
+            // 👤 MES DOCUMENTS (Uniquement les miens)
+            $tab = 'my_documents'; 
+            $query = auth()->user()->documents()
+                ->withCount('sharedWith')
+                ->orderBy('documents.updated_at', 'desc'); 
         }
 
         // --------------------------------------------------------

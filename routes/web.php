@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 */
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::get('/login', [LoginController::class, 'redirectToKeycloak'])->name('login');
     Route::get('/auth/keycloak/redirect', [LoginController::class, 'redirectToKeycloak'])->name('keycloak.login');
     Route::get('/auth/keycloak/callback', [LoginController::class, 'handleKeycloakCallback']);
 });
