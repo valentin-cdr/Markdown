@@ -10,5 +10,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/documents/{id}', [DocumentApiController::class, 'show']);
 
 });
-
-// 1|MpCFvB9yNVG7CDQoHLurbnjQpKM7OPUFegHJosDa78329be1
