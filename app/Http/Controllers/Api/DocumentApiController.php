@@ -8,29 +8,27 @@ use Illuminate\Http\Request;
 
 class DocumentApiController extends Controller
 {
-    // 1. Récupérer la liste des documents (avec possibilité de filtrer par groupe)
-    public function index(Request $request)
+    // 1. Récupérer TOUS les documents de la base de données
+    public function index()
     {
-        $query = Document::query();
-
-        // Si l'API demande un groupe précis (ex: /api/documents?group=on-air)
-        if ($request->has('group')) {
-            $query->where('group_key', $request->query('group'));
-        }
-
-        $documents = $query->latest()->get();
+        // 🚀 On désactive la sécurité des sessions web, et on prend absolument tout !
+        $documents = Document::withoutGlobalScope('ancient_isolation')
+                             ->latest()
+                             ->get();
 
         return response()->json([
             'success' => true,
-            'count' => $documents->count(),
-            'data' => $documents
+            'count'   => $documents->count(),
+            'data'    => $documents
         ]);
     }
 
-    // 2. Afficher un seul document en détail
+    // 2. Afficher n'importe quel document en détail via son ID
     public function show($id)
     {
-        $document = Document::find($id);
+        // On cherche par ID sans aucune restriction de groupe
+        $document = Document::withoutGlobalScope('ancient_isolation')
+                            ->find($id);
 
         if (!$document) {
             return response()->json([
@@ -41,7 +39,7 @@ class DocumentApiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $document
+            'data'    => $document
         ]);
     }
 }

@@ -14,7 +14,7 @@ class Document extends Model
         'title',
         'content',
         'tags',
-        'group_key', // 🚨 Autorisé pour l'écriture
+        'group_key',
         'user_id',
     ];
 
