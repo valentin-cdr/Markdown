@@ -42,4 +42,60 @@ class DocumentApiController extends Controller
             'data'    => $document
         ]);
     }
+
+    public function search(Request $request)
+    {
+        $q = $request->query('q');
+
+        if (!$q) {
+            return response()->json(['success' => false, 'message' => 'Mot-clé manquant.'], 400);
+        }
+
+        $documents = Document::withoutGlobalScope('ancient_isolation')
+            ->where('title', 'LIKE', "%{$q}%")
+            ->orWhere('content', 'LIKE', "%{$q}%")
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'count'   => $documents->count(),
+            'data'    => $documents
+        ]);
+    }
+
+    public function byGroup($groupKey)
+    {
+        $documents = Document::withoutGlobalScope('ancient_isolation')
+            ->where('group_key', $groupKey)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'count'   => $documents->count(),
+            'data'    => $documents
+        ]);
+    }
+    public function searchInGroup(Request $request, $groupKey)
+    {
+        $q = $request->query('q');
+
+        if (!$q) {
+            return response()->json(['success' => false, 'message' => 'Mot-clé manquant.'], 400);
+        }
+
+        $documents = Document::withoutGlobalScope('ancient_isolation')
+            ->where('group_key', $groupKey)
+            // 🛡️ On encadre la recherche titre/contenu dans une fonction (parenthèses en SQL)
+            ->where(function ($query) use ($q) {
+                $query->where('title', 'LIKE', "%{$q}%")
+                      ->orWhere('content', 'LIKE', "%{$q}%");
+            })
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'count'   => $documents->count(),
+            'data'    => $documents
+        ]);
+    }
 }
