@@ -37,13 +37,6 @@ class LoginController extends Controller
     public function handleKeycloakCallback(\Illuminate\Http\Request $request)
     {
         try {
-            dd([
-                'ETAPE' => '2 - Retour de Keycloak',
-                'URL_DE_RETOUR' => $request->fullUrl(),
-                'COOKIE_RETROUVE' => $request->cookie('intended_group'),
-                'SESSION_ACTIVE' => session('active_group_key'),
-                'SESSION_EN_ATTENTE' => session('pending_login_group'),
-            ]);
 
             $requestedGroup = $request->cookie('intended_group');
 
