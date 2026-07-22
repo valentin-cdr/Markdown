@@ -4,10 +4,11 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\View; // 🚀 Requis pour le View::composer
+use Illuminate\Support\Facades\View; 
+use Illuminate\Support\Facades\Cache;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use Illuminate\Pagination\Paginator;
-use App\Models\Group; // 🚀 Requis pour chercher la franchise en BDD
+use App\Models\Group; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,82 +25,91 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Ton code existant pour Keycloak et la pagination
+        // Keycloak
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('keycloak', \SocialiteProviders\Keycloak\Provider::class);
         });
         
+        // Pagination
         Paginator::useTailwind();
 
-        // 🍔 Injection automatique des variables du Menu Burger sur tout le site
-        // 🍔 Injection automatique des variables du Menu Burger sur tout le site
-        View::composer('layouts.app', function ($view) {
+        // 🍔 View Composer : Prépare les données pour le menu sur toutes les pages
+        View::composer('*', function ($view) { // Utilisation de '*' ou 'layouts.app' selon ton arborescence
             $groups = session('keycloak_groups', []);
             $isAdmin = in_array('retd', $groups) || in_array('glossaire', $groups) || in_array('glossaire_lecteur', $groups);
 
-            // 1. 🕵️‍♂️ ON DÉTERMINE LE GROUPE ACTIF INTELLIGEMMENT
-            $currentGroupKey = null;
+            // Mise en cache de la configuration des groupes (1 heure)
+            $groupBrandConfig = Cache::remember('groups_config', 3600, function () {
+                return Group::all()->keyBy('key')->toArray();
+            });
+
+            $currentGroupKey = 'retd'; 
             $navGroupBrand = null;
 
             if (auth()->check()) {
                 $user = auth()->user();
 
-                // A. Est-ce qu'un admin a forcé un groupe via le bouton de switch ?
-                if (session()->has('admin_forced_group')) {
-                    $forcedKey = session('admin_forced_group');
-                    if ($forcedKey && $forcedKey !== 'global') {
-                        $currentGroupKey = $forcedKey;
-                        $navGroupBrand = Group::where('key', $currentGroupKey)->first();
+                // A. Forçage admin via session
+                $forcedKey = session('active_group_key', session('admin_forced_group'));
+                
+                if ($forcedKey && $forcedKey !== 'global' && $forcedKey !== 'retd') {
+                    $currentGroupKey = $forcedKey;
+                    if (isset($groupBrandConfig[$currentGroupKey])) {
+                        $navGroupBrand = $groupBrandConfig[$currentGroupKey];
                     }
                 } 
-                // B. Sinon, on utilise le VRAI groupe de l'utilisateur (via la BDD)
-                elseif ($user->franchise_id) {
-                    $navGroupBrand = $user->group; // On utilise la relation réparée !
-                    if ($navGroupBrand) {
-                        $currentGroupKey = $navGroupBrand->key;
+                // B. Vrai groupe de l'utilisateur
+                elseif (!empty($user->franchise_id)) {
+                    $matchedGroup = collect($groupBrandConfig)->firstWhere('id', $user->franchise_id);
+                    if ($matchedGroup) {
+                        $navGroupBrand = $matchedGroup;
+                        $currentGroupKey = $matchedGroup['key'];
                     }
                 }
             }
             
-            // 2. On détermine si on est sur la vue "Réseau Global"
-            $isGlobalView = empty($currentGroupKey) || $currentGroupKey === 'retd';
+            $isGlobalView = $currentGroupKey === 'retd';
 
-            // 3. 🚀 TES RÈGLES DE PERMISSIONS
-            if ($isAdmin) {
-                // L'admin a le passe-partout : il voit ABSOLUMENT TOUT
+            // Liste pour le sélecteur d'environnement
+            $allGroups = collect($groupBrandConfig)
+                            ->where('key', '!=', 'retd')
+                            ->sortBy('name')
+                            ->values();
+
+            // Gestion des permissions
+            if ($isAdmin && $isGlobalView) {
                 $canSeePilotage    = true;
                 $canSeeSuperset    = true;
                 $canSeeGestionClub = true; 
                 $canSeeIA          = true;
                 $canSeeDolibarr    = true;
-            } else {
-                // Les autres (Franchises) voient uniquement leurs 3 outils dédiés
-                $canSeePilotage    = true;
-                $canSeeSuperset    = true; 
-                $canSeeGestionClub = true; 
-                $canSeeIA          = true;
+                $canSeeGlossaire   = true;
                 
-                // On leur bloque l'accès aux outils exclusifs Admin
-                $canSeeDolibarr    = false;
-            }
-            
-            $supersetUrl = env('SUPERSET_URL', '#');
-            $dolibarrUrl = env('DOLIBARR_URL', '#');
+                $supersetUrl = env('SUPERSET_URL', '#');
+                $dolibarrUrl = env('DOLIBARR_URL', '#');
+            } else {
+                $activeGroup = $groupBrandConfig[$currentGroupKey] ?? null;
+                $briquesActives = $activeGroup ? (array) ($activeGroup['briques_actives'] ?? []) : [];
+                $briquesActives = array_map('strtolower', $briquesActives);
 
-            
-            $view->with([
-                'isAdmin'           => $isAdmin,
-                'isGlobalView'      => $isGlobalView,
-                'canSeePilotage'    => $canSeePilotage,
-                'canSeeSuperset'    => $canSeeSuperset,
-                'canSeeGestionClub' => $canSeeGestionClub,
-                'canSeeIA'          => $canSeeIA,
-                'canSeeDolibarr'    => $canSeeDolibarr,
-                'supersetUrl'       => $supersetUrl,
-                'dolibarrUrl'       => $dolibarrUrl,
-                'currentGroupKey'   => $currentGroupKey,
-                'navGroupBrand'     => $navGroupBrand, // Contient toutes les couleurs du thème !
-            ]);
+                $canSeePilotage    = !empty($briquesActives) ? in_array('pilotage', $briquesActives) : true;
+                $canSeeSuperset    = !empty($briquesActives) ? in_array('superset', $briquesActives) : true;
+                $canSeeGestionClub = !empty($briquesActives) ? in_array('gestion', $briquesActives) : true;
+                $canSeeIA          = !empty($briquesActives) ? in_array('ia', $briquesActives) : true;
+                $canSeeGlossaire   = !empty($briquesActives) ? in_array('glossaire', $briquesActives) : true;
+                $canSeeDolibarr    = in_array('dolibarr', $briquesActives);
+                
+                $supersetUrl = $activeGroup['superset_url'] ?? env('SUPERSET_URL', '#');
+                $dolibarrUrl = $activeGroup['dolibarr_url'] ?? env('DOLIBARR_URL', '#');
+            }
+
+            // Envoi à la vue
+            $view->with(compact(
+                'isAdmin', 'isGlobalView', 'allGroups',
+                'canSeePilotage', 'canSeeSuperset', 'canSeeGestionClub', 
+                'canSeeIA', 'canSeeDolibarr', 'canSeeGlossaire',
+                'supersetUrl', 'dolibarrUrl', 'currentGroupKey', 'navGroupBrand'
+            ));
         });
     }
 }

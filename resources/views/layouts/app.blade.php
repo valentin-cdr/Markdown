@@ -1,86 +1,3 @@
-@php
-    $userGroups = [];
-
-    // 1. LECTURE DE LA SESSION KEYCLOAK
-    if (auth()->check() && !empty(session('keycloak_groups'))) {
-        $userGroups = (array) session('keycloak_groups');
-    }
-
-    // 2. SÉCURISATION ADMIN
-    $isAdmin = in_array('retd', $userGroups) || in_array('glossaire', $userGroups); 
-
-    // 3. CONFIGURATION DES GROUPES (Mise en cache)
-    $groupBrandConfig = \Illuminate\Support\Facades\Cache::remember('groups_config', 3600, function () {
-        return \App\Models\Group::all()->keyBy('key')->toArray();
-    });
-
-    // 4. 🚀 RÉSOLUTION DU GROUPE ACTIF (Unifiée avec l'application)
-    // 4. 🚀 RÉSOLUTION DU GROUPE ACTIF (Unifiée avec l'application)
-    $navGroupBrand = null;
-    $currentGroupKey = null; 
-
-    if (auth()->check()) {
-        $user = auth()->user();
-
-        // A. Priorité absolue au sélecteur forcé par l'admin (via le bouton)
-        if (session()->has('active_group_key')) { // 🌟 CORRIGÉ ICI
-            $forcedKey = session('active_group_key'); // 🌟 CORRIGÉ ICI
-            if ($forcedKey && $forcedKey !== 'global' && $forcedKey !== 'retd') {
-                $currentGroupKey = $forcedKey;
-                if (isset($groupBrandConfig[$currentGroupKey])) {
-                    $navGroupBrand = $groupBrandConfig[$currentGroupKey];
-                }
-            }
-        } 
-        // B. Sinon, on utilise le vrai groupe de l'utilisateur stocké en BDD !
-        elseif (!empty($user->franchise_id)) {
-            $matchedGroup = collect($groupBrandConfig)->firstWhere('id', $user->franchise_id);
-            if ($matchedGroup) {
-                $navGroupBrand = $matchedGroup;
-                $currentGroupKey = $matchedGroup['key'];
-            }
-        }
-    }
-
-    // Si aucune clé n'est trouvée, on retombe par défaut sur le Global RETD
-    if (empty($currentGroupKey)) {
-        $currentGroupKey = 'retd';
-    }
-
-    // 5. VARIABLES POUR LE SÉLECTEUR VISUEL
-    $isGlobalView = $currentGroupKey === 'retd';
-    $allGroups = \App\Models\Group::where('key', '!=', 'retd')->orderBy('name')->get();
-
-    // 6. RÈGLES DES PERMISSIONS DU MENU BURGER ET URLS
-    if ($isAdmin && $isGlobalView) {
-        $canSeePilotage    = true;
-        $canSeeSuperset    = true;
-        $canSeeGestionClub = true;
-        $canSeeDolibarr    = true;
-        $canSeeIA          = true;
-        $canSeeGlossaire   = true;
-        
-        // Les admins globaux n'ont pas d'URL spécifique par défaut
-        $supersetUrl       = '#'; 
-        $dolibarrUrl       = '#'; 
-    } else {
-        $activeGroup = \App\Models\Group::where('key', $currentGroupKey)->first();
-        
-        $briquesActives = $activeGroup ? (array) $activeGroup->briques_actives : [];
-        $briquesActives = array_map('strtolower', $briquesActives);
-
-        $canSeePilotage    = in_array('pilotage', $briquesActives);
-        $canSeeSuperset    = in_array('superset', $briquesActives);
-        $canSeeGestionClub = in_array('gestion', $briquesActives); 
-        $canSeeIA          = in_array('ia', $briquesActives);
-        $canSeeGlossaire   = in_array('glossaire', $briquesActives);
-        $canSeeDolibarr    = in_array('dolibarr', $briquesActives); 
-
-        // 🚀 RÉCUPÉRATION DES URLS
-        $supersetUrl = $activeGroup && $activeGroup->superset_url ? $activeGroup->superset_url : '#';
-        $dolibarrUrl = $activeGroup && $activeGroup->dolibarr_url ? $activeGroup->dolibarr_url : '#';
-    }
-@endphp
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -94,9 +11,6 @@
     @else
         <link rel="icon" type="image/png" href="{{ asset('images/retd_blanc.png') }}?v={{ time() }}">
     @endif
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    {{-- ... la suite de ton head ... --}}
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -240,7 +154,7 @@
             x-cloak 
             class="absolute top-14 left-0 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl py-3 flex flex-col gap-1">
 
-            {{-- 🚀 BOUTON ACCUEIL (Qui force la synchro de l'environnement) --}}
+            {{-- 🚀 BOUTON ACCUEIL --}}
             <a href="http://127.0.0.1:8000/franchises/switch-by-slug/{{ $currentGroupKey }}" rel="noreferrer" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[var(--brand-primary)] transition">
                 <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -323,7 +237,6 @@
             <a href="{{ route('home') }}" class="flex items-center space-x-3 group shrink-0">
                 <div class="h-8 md:h-10 w-auto flex items-center">
                     @if($currentGroupKey && $currentGroupKey !== 'retd')
-                        {{-- Utilisation de "key" au lieu de "name" pour éviter les bugs d'espaces --}}
                         <img src="{{ asset('images/' . ($navGroupBrand['key'] ?? '') . '.png') }}" 
                              alt="Logo {{ $navGroupBrand['name'] ?? '' }}" 
                              class="h-full w-auto object-contain transition-all duration-300 group-hover:scale-105"
@@ -341,16 +254,6 @@
                 <span class="text-gray-300 dark:text-gray-600 font-light text-xl">|</span>
                 <div class="flex items-center gap-2.5">
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">Glossaire</h1>
-                    
-                    {{-- 🚀 BADGES DES GROUPES KEYCLOAK --}}
-                    @php
-                        // CORRECTION : On utilise un nom unique pour ne pas écraser la variable du contrôleur
-                        $keycloakSessionGroups = session('keycloak_groups', []);
-                        
-                        $glossaireGroups = array_filter($keycloakSessionGroups, function($g) {
-                            return str_contains(strtolower($g), 'glossaire');
-                        });
-                    @endphp
                 </div>
             </a>
 
@@ -368,7 +271,6 @@
                         @endif
                         
                         <span class="text-xs font-bold tracking-tight truncate text-gray-700 dark:text-gray-200">
-                            {{-- 🚀 CORRECTION 1 ICI --}}
                             {!! $isGlobalView ? 'Réseau Global' : ($navGroupBrand['name'] ?? 'Inconnu') !!}
                         </span>
                         <svg class="w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200"
@@ -397,15 +299,14 @@
                         <div class="h-px bg-gray-100 dark:bg-gray-700 my-1.5 mx-4"></div>
 
                         @foreach($allGroups as $env)
-                            @php $isActive = (!$isGlobalView && $currentGroupKey === $env->key); @endphp
-                            <a href="{{ route('env.switch', ['group' => $env->key]) }}"
+                            @php $isActive = (!$isGlobalView && $currentGroupKey === $env['key']); @endphp
+                            <a href="{{ route('env.switch', ['group' => $env['key']]) }}"
                                 class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm font-medium transition
                                             {{ $isActive ? 'bg-gray-50 dark:bg-gray-700 text-[var(--brand-primary)]' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                                 
-                                <img src="{{ asset('images/' . $env->key . '.png') }}" alt="" class="h-4 w-4 rounded object-contain shrink-0" onerror="this.style.display='none'">
+                                <img src="{{ asset('images/' . $env['key'] . '.png') }}" alt="" class="h-4 w-4 rounded object-contain shrink-0" onerror="this.style.display='none'">
                                 
-                                {{-- 🚀 CORRECTION 2 ICI --}}
-                                <span class="flex-1 truncate" @if($isActive) style="color: {{ $env->scroll_light ?? 'var(--brand-primary)' }}" @endif>{!! $env->name !!}</span>
+                                <span class="flex-1 truncate" @if($isActive) style="color: {{ $env['scroll_light'] ?? 'var(--brand-primary)' }}" @endif>{!! $env['name'] !!}</span>
                                 @if($isActive)<span class="text-[10px]">✓</span>@endif
                             </a>
                         @endforeach
