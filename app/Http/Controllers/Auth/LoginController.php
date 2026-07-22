@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
+
 class LoginController extends Controller
 {
     public function showLoginForm()
@@ -19,14 +20,33 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function redirectToKeycloak()
+    // Si tu utilises Socialite pour rediriger vers Keycloak :
+    public function redirectToKeycloak(Request $request)
     {
-        return Socialite::driver('keycloak')->redirect();
+        $group = $request->get('group');
+        $redirect = Socialite::driver('keycloak')->redirect();
+        
+        // 🛡️ On utilise un cookie natif spécifique pour survivre à la corruption de session locale
+        if ($group) {
+            return $redirect->withCookie(cookie('intended_group', $group, 15));
+        }
+
+        return $redirect;
     }
 
-    public function handleKeycloakCallback()
+    public function handleKeycloakCallback(\Illuminate\Http\Request $request)
     {
         try {
+            dd([
+                'ETAPE' => '2 - Retour de Keycloak',
+                'URL_DE_RETOUR' => $request->fullUrl(),
+                'COOKIE_RETROUVE' => $request->cookie('intended_group'),
+                'SESSION_ACTIVE' => session('active_group_key'),
+                'SESSION_EN_ATTENTE' => session('pending_login_group'),
+            ]);
+
+            $requestedGroup = $request->cookie('intended_group');
+
             $keycloakUser = Socialite::driver('keycloak')->user();
 
             // 1. Récupération des groupes Keycloak
@@ -34,7 +54,7 @@ class LoginController extends Controller
             $userGroups = $rawPayload['groups'] ?? $keycloakUser->user['groups'] ?? [];
             $userGroups = array_map(fn($g) => ltrim($g, '/'), $userGroups);
 
-            // 2. Stockage des groupes ET du token d'accès en session[cite: 1]
+            // 2. Stockage des groupes ET du token d'accès en session
             Session::put('keycloak_groups', $userGroups);
             Session::put('keycloak_token', $keycloakUser->token);
 
@@ -44,7 +64,6 @@ class LoginController extends Controller
             });
 
             // 3. Détection Super Admin et Lecteur depuis les groupes filtrés
-            // (Si le groupe est exactement "glossaire", on le considère super admin)
             $isSuperAdmin  = in_array('glossaire', $glossaireGroups) || in_array('retd', $userGroups); 
             $isLecteur     = !empty(array_filter($glossaireGroups, fn($g) => str_contains(strtolower($g), 'lecteur')));
             $assignedGroup = $isSuperAdmin ? 'retd' : (reset($glossaireGroups) ?? null);
@@ -54,7 +73,6 @@ class LoginController extends Controller
             $hasGroupError = false;
 
             if (!$isSuperAdmin) {
-                // S'il n'a AUCUN groupe contenant le mot "glossaire", c'est une erreur directe
                 if (empty($glossaireGroups)) {
                     $hasGroupError = true;
                 } else {
@@ -72,23 +90,29 @@ class LoginController extends Controller
 
                     if ($matchingGroup) {
                         $targetGroupId = $matchingGroup->id;
-                        
-                        // 🚀 LA CORRECTION MAGIQUE : On enregistre la clé du groupe pour débloquer les sécurités !
-                        Session::put('active_group_key', $matchingGroup->key);
-                        
                     } else {
                         $hasGroupError = true;
                     }
                 }
-            } else {
-                // Sécurité supplémentaire pour initialiser la session du Super Admin par défaut
-                Session::put('active_group_key', 'retd'); 
             }
 
-            // 👉 Récupération de l'identifiant Keycloak[cite: 1]
+            // 🌟 5. AFFECTATION DE LA SESSION : LE VERROU MAGIQUE
+            // Si l'utilisateur arrivait avec un groupe spécifique (ex: 'rituel'), ON LE GARDE !
+            // Sinon (connexion classique), on utilise le groupe correspondant au profil Keycloak (ex: 'on-air')
+            if (!empty($requestedGroup)) {
+                Session::put('active_group_key', $requestedGroup);
+            } else {
+                if ($isSuperAdmin) {
+                    Session::put('active_group_key', 'retd');
+                } elseif (isset($matchingGroup) && $matchingGroup) {
+                    Session::put('active_group_key', $matchingGroup->key);
+                }
+            }
+
+            // 👉 Récupération de l'identifiant Keycloak
             $username = $keycloakUser->getNickname() ?? $keycloakUser->getId();
 
-            // 5. Création / mise à jour utilisateur[cite: 1]
+            // 6. Création / mise à jour utilisateur
             $user = \App\Models\User::updateOrCreate(
                 ['username' => $username],
                 [
@@ -100,14 +124,18 @@ class LoginController extends Controller
                 ]
             );
 
-            // 6. Si l'utilisateur n'a plus de groupe valide, on le jette MAINTENANT[cite: 1]
+            // 7. Si l'utilisateur n'a plus de groupe valide, on le jette MAINTENANT
             if ($hasGroupError) {
                 throw new \Exception("Votre compte d'accès n'est rattaché à aucun environnement/groupe actif pour le Glossaire. Contactez l'administrateur du laboratoire R&D.");
             }
 
             \Illuminate\Support\Facades\Auth::login($user);
 
-            return redirect('/home');
+            // 🚀 REDIRECTION FINALE EXPLICITE
+            $redirectUrl = !empty($requestedGroup) ? '/direct-home/' . $requestedGroup : '/home';
+            
+            // On te redirige et on détruit le cookie devenu inutile
+            return redirect($redirectUrl)->withCookie(cookie()->forget('intended_group'));
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Erreur Keycloak Callback : ' . $e->getMessage());

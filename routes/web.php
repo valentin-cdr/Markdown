@@ -16,6 +16,25 @@ use Illuminate\Http\Request;
 |--------------------------------------------------------------------------
 */
 
+// 1. La route directe pour le bouton du Projet A
+Route::get('/direct-home/{group}', [HomeController::class, 'index'])->name('direct.home');
+
+// 2. La route interne pour le menu déroulant du Projet B
+Route::get('/switch-environment/{group}', function ($group) {
+    session(['forced_group_key' => $group]);
+    session(['active_group_key' => $group]);
+    
+    $groupeModel = \App\Models\Group::where('key', $group)->first() ?? \App\Models\Group::where('slug', $group)->first();
+    if ($groupeModel) {
+        session(['simulated_group_id' => $groupeModel->id]);
+        session(['simulated_franchise_id' => $groupeModel->id]);
+    }
+    
+    session()->save();
+    
+    return redirect()->route('home');
+})->name('env.switch');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'redirectToKeycloak'])->name('login');
     Route::get('/auth/keycloak/redirect', [LoginController::class, 'redirectToKeycloak'])->name('keycloak.login');
@@ -52,18 +71,5 @@ Route::middleware('auth')->group(function () {
     
     // Route pour permettre à l'admin de changer d'environnement/groupe à la volée
     Route::get('/groups/switch/{key}', [ConfigurationController::class, 'switchGroup'])->name('groups.switch');
-    
-    Route::get('/switch-environment', function (Request $request) {
-        $group = $request->query('group');
-        
-        if (empty($group) || $group === 'global' || $group === 'retd') {
-            // On stocke explicitement 'retd' pour le réseau global
-            session(['active_group_key' => 'retd']);
-        } else {
-            session(['active_group_key' => $group]);
-        }
-        
-        return redirect()->route('home');
-    })->name('env.switch')->middleware('auth');
 
 });

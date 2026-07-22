@@ -9,25 +9,45 @@ use App\Models\Document;
 use App\Models\Group;
 use Illuminate\Support\Facades\Cache;
 
-
 class HomeController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, $group = null)
     {
-        // --------------------------------------------------------
-        // 🔄 1. INTERRUPTEUR D'ENVIRONNEMENT (Prise en compte immédiate sans redirection)
-        // --------------------------------------------------------
-        if ($request->has('group')) {
-            $group = $request->input('group');
+        // 🚀 1. LE SAS DE REDIRECTION INVISIBLE (S'exécute quand tu cliques sur le bouton du Projet A)
+        if ($group) {
+            // On mémorise la demande en session
+            session(['active_group_key' => $group]);
+            session(['forced_group_key' => $group]);
             
-            if (empty($group) || $group === 'retd') {
-                session()->forget('active_group_key');
+            // On associe le design visuel au bon Modèle (Group pour le Glossaire)
+            $groupeModel = \App\Models\Group::where('key', $group)->first() ?? \App\Models\Group::where('slug', $group)->first();
+            if ($groupeModel) {
+                session(['simulated_group_id' => $groupeModel->id]); 
             } else {
-                session(['active_group_key' => $group]);
+                session()->forget('simulated_group_id');
             }
-            
-            session()->save(); // On force l'enregistrement immédiat en mémoire
+            session()->save();
+
+            // MAGIE : On te redirige immédiatement vers la vraie page Home !
+            return redirect()->route('home');
         }
+
+        // 🛑 2. SÉCURITÉ : Si on arrive sur /home mais qu'on n'est pas connecté
+        if (!auth()->check()) {
+            session(['url.intended' => route('home')]);
+            session()->save();
+            return redirect('/login');
+        }
+
+        // 3. RÉCUPÉRATION DU GROUPE ACTIF SUR LA PAGE HOME
+        $activeGroup = session('forced_group_key') ?? session('active_group_key', 'retd');
+
+        // 🛡️ SÉCURITÉ DESIGN : On s'assure que le visuel reste actif si tu rafraîchis la page
+        $groupeModel = \App\Models\Group::where('key', $activeGroup)->first() ?? \App\Models\Group::where('slug', $activeGroup)->first();
+        if ($groupeModel) {
+            session(['simulated_group_id' => $groupeModel->id]); 
+        }
+        session()->save();
 
         // --------------------------------------------------------
         // 🌐 RÉCUPÉRATION DES DONNÉES DE L'API EXTERNE (Anti-Cache)
@@ -35,7 +55,6 @@ class HomeController extends Controller
         $apiDocuments = collect(); 
 
         try {
-            // 1. La requête HTTP (avec l'anti-cache)
             $response = \Illuminate\Support\Facades\Http::withToken(env('RETD_API_TOKEN'))
                             ->withHeaders([
                                 'Cache-Control' => 'no-cache, no-store, must-revalidate',
@@ -46,21 +65,13 @@ class HomeController extends Controller
                                 '_t' => now()->timestamp 
                             ]);
 
-            // 2. On vérifie SI la réponse est un succès À L'INTÉRIEUR du try
             if ($response->successful()) {
-                
                 $apiDocuments = collect($response->json());
-                
-                // Si tu avais besoin de vider le cache des groupes, ça se passe ici :
-                // \Illuminate\Support\Facades\Cache::forget('groups_config');
-
             } else {
-                // Optionnel : Enregistrer si l'API répond, mais avec une erreur (ex: 404, 401)
                 \Illuminate\Support\Facades\Log::warning("L'API a renvoyé une erreur : " . $response->status());
             }
 
         } catch (\Exception $e) {
-            // 3. Si le serveur d'en face est totalement planté ou injoignable, on arrive ici
             \Illuminate\Support\Facades\Log::error("Erreur de connexion à l'API : " . $e->getMessage());
         }
 
@@ -72,7 +83,6 @@ class HomeController extends Controller
         $isRetd = in_array('retd', $groups);
 
         $selectedFolder = $request->input('folder');
-        $activeGroup = $this->getActiveGroupKey();
 
         // 🕵️‍♂️ SÉCURISATION : Détection fine des rôles Keycloak
         $isLecteur = false;
@@ -82,33 +92,21 @@ class HomeController extends Controller
             if (str_contains($gLower, 'lecteur')) {
                 $isLecteur = true;
             } elseif (str_contains($gLower, 'glossaire') && !str_contains($gLower, 'lecteur')) {
-                $isCreator = true; // Profil type "glossaire_onair"
+                $isCreator = true; 
             }
         }
 
-        // 🎯 ONGLET PAR DÉFAUT : Le lecteur pur arrive sur les documents du groupe, les autres sur "Mes documents"
+        // 🎯 ONGLET PAR DÉFAUT
         $defaultTab = ($isLecteur && !$isCreator && !$isRetd) ? 'group_documents' : 'my_documents';
         $tab = $request->input('tab', $defaultTab);
 
-        // Clé du groupe (Compatible avec le switcher de l'Admin)
-        $userGroupKey = null;
-        if (auth()->check()) {
-            // Si on est Admin ET qu'on a un groupe actif en session
-            if ($isRetd && session()->has('active_group_key') && session('active_group_key') !== 'global' && session('active_group_key') !== 'retd') {
-                $userGroupKey = session('active_group_key');
-            } 
-            // Sinon on prend la franchise de l'utilisateur
-            elseif (auth()->user()->franchise_id) {
-                $userGroup = \App\Models\Group::find(auth()->user()->franchise_id);
-                $userGroupKey = $userGroup ? $userGroup->key : null;
-            }
-        }
+        // Clé du groupe pour la requête SQL
+        $userGroupKey = $activeGroup;
 
         // --------------------------------------------------------
         // ÉTAPE 1 : INITIALISATION DE LA REQUÊTE SELON L'ONGLET
         // --------------------------------------------------------
         if ($tab === 'shared') {
-            // 🚀 CORRECTION : On demande à Laravel d'ignorer le filtre de groupe pour les partages
             $query = auth()->user()->sharedDocuments()
                 ->withoutGlobalScopes()
                 ->with('user')
@@ -121,15 +119,14 @@ class HomeController extends Controller
                 ->orderBy('documents.updated_at', 'desc');
                 
         } elseif ($tab === 'group_documents') {
-            // 🚀 LE NOUVEL ONGLET : Bibliothèque de la franchise (Visible par créateurs et lecteurs)
             $query = \App\Models\Document::withoutGlobalScopes();
             
             if ($userGroupKey) {
                 $variants = [$userGroupKey];
-                if ($userGroupKey === 'on-air') $variants[] = 'onAir'; // Tolérance de l'ancien format
+                if ($userGroupKey === 'on-air') $variants[] = 'onAir'; 
                 $query->whereIn('group_key', $variants);
             } else {
-                $query->where('id', 0); // Sécurité anti-fuite
+                $query->where('id', 0); 
             }
             
             $query->with('user')
@@ -137,7 +134,6 @@ class HomeController extends Controller
                 ->orderBy('documents.updated_at', 'desc');
 
         } else {
-            // 👤 MES DOCUMENTS (Uniquement les miens)
             $tab = 'my_documents'; 
             $query = auth()->user()->documents()
                 ->withCount('sharedWith')
@@ -161,7 +157,7 @@ class HomeController extends Controller
         }
 
         // --------------------------------------------------------
-        // ÉTAPE 3 : EXTRACTION DES TAGS BASÉE SUR L'ENVIRONNEMENT
+        // ÉTAPE 3 : EXTRACTION DES TAGS
         // --------------------------------------------------------
         $tagsQuery = clone $query;
         $allTagsDocs = $tagsQuery->get();
@@ -205,7 +201,6 @@ class HomeController extends Controller
         // ÉTAPE 5 : RÉCUPÉRATION FINALE ET RÉPARTITION
         // --------------------------------------------------------
         if ($tab === 'all' && $isRetd) {
-            
             if (!empty($selectedFolder)) {
                 if ($selectedFolder === 'ALL_DOCS') {
                     $documentsToDisplay = $query->paginate(12)->withQueryString();
@@ -232,7 +227,6 @@ class HomeController extends Controller
                         ]
                     );
                 }
-
             } else {
                 $groupedDocs = $query->get()->groupBy(function($doc) {
                     return strtoupper($doc->group_key ?? 'RETD');
@@ -240,11 +234,14 @@ class HomeController extends Controller
 
                 $documentsToDisplay = $groupedDocs;
             }
-            
         } else {
-            
             $documentsToDisplay = $query->paginate(12)->withQueryString();
         }
+        
+        // 🛡️ SÉCURISATION D'ACQUISITION DU MODÈLE GROUPE (Évite l'erreur null pointer dans la vue)
+        $currentGroupModel = \App\Models\Group::where('key', $activeGroup)->first()
+                             ?? \App\Models\Group::where('slug', $activeGroup)->first()
+                             ?? new \App\Models\Group(['name' => ucfirst($activeGroup), 'key' => $activeGroup]);
 
         return view('home', [
             'documents' => $documentsToDisplay,
@@ -255,11 +252,13 @@ class HomeController extends Controller
             'pillsTags' => $pillsTags,
             'allTags' => $allTags,
             'selectedFolder' => $selectedFolder,
+            'currentGroup' => $currentGroupModel,
+            'activeGroupKey' => $activeGroup,
         ]);
     }
 
     protected function getActiveGroupKey()
     {
-        return session('active_group_key', 'retd');
+        return session('forced_group_key') ?? session('active_group_key', 'retd');
     }
 }
