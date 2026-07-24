@@ -150,7 +150,15 @@ class LoginController extends Controller
 
         $logoutUrl = "{$baseUrl}/realms/{$realm}/protocol/openid-connect/logout" //[cite: 1]
                 . "?client_id={$clientId}&post_logout_redirect_uri={$redirectUri}"; //[cite: 1]
-
+                
+        session()->forget([
+            'admin_forced_group',
+            'active_group_key',
+            'forced_group_key',
+            'simulated_group_id',
+            'simulated_franchise_id',
+            'keycloak_groups'
+        ]);
         return redirect($logoutUrl);
     }
 }

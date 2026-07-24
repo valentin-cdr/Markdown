@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view) { 
             $groups = session('keycloak_groups', []);
-            $isAdmin = in_array('retd', $groups) || in_array('glossaire', $groups) || in_array('glossaire_lecteur', $groups);
+            $isAdmin = in_array('retd', $groups);
 
             // Pour l'instant, on garde la BDD locale pour l'affichage de la liste du menu déroulant et des couleurs globales
             $groupBrandConfig = Cache::remember('groups_config', 3600, function () {
