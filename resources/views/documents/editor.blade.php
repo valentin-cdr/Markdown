@@ -4,20 +4,6 @@
     if ($cancelUrl === url()->current()) {
         $cancelUrl = route('home');
     }
-
-    // --- On récupère la couleur du groupe pour l'éditeur Toast UI ---
-    $editorColors = [
-        'retd'  => ['light' => '#f59e0b', 'dark' => '#fbbf24'], // Amber
-        'onAir' => ['light' => '#3b82f6', 'dark' => '#60a5fa'], // Blue
-        'RSC'   => ['light' => '#10b981', 'dark' => '#34d399'], // Emerald
-    ];
-    // On trouve le groupe actif de l'utilisateur
-    $activeGroups = array_intersect(session('keycloak_groups', []), array_keys($editorColors));
-    $activeGroup = reset($activeGroups);
-    
-    // On définit les variables qu'on va injecter dans le CSS
-    $colorLight = $activeGroup ? $editorColors[$activeGroup]['light'] : '#4f46e5';
-    $colorDark = $activeGroup ? $editorColors[$activeGroup]['dark'] : '#818cf8';
 @endphp
 @section('title', $document ? 'Modifier - ' . $document->title : 'Nouveau document')
 
@@ -26,244 +12,95 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css" />
     
     <style>
-        .toastui-editor-defaultUI {
-            border-radius: 0.75rem !important;
-            border: 1px solid #e5e7eb !important;
-            font-family: inherit !important;
-            overflow: hidden;
-            box-shadow: none !important;
-        }
-        .dark .toastui-editor-defaultUI {
-            border-color: #374151 !important; 
-        }
+        /* [ ... VOS STYLES DE STRUCTURE RESTENT IDENTIQUES ... ] */
+        .toastui-editor-defaultUI { border-radius: 0.75rem !important; border: 1px solid #e5e7eb !important; font-family: inherit !important; overflow: hidden; box-shadow: none !important; }
+        .dark .toastui-editor-defaultUI { border-color: #2A2A2A !important; }
+        .toastui-editor-defaultUI .toastui-editor-status-bar { display: none !important; }
+        .toastui-editor-defaultUI .ProseMirror h1, .toastui-editor-defaultUI .ProseMirror h2, .toastui-editor-contents h1, .toastui-editor-contents h2 { border-bottom: none !important; padding-bottom: 0 !important; }
+        .toastui-editor-defaultUI .ProseMirror, .toastui-editor-contents { min-height: 400px !important; }
+        .toastui-editor-defaultUI .toastui-editor-tabs { height: 34px !important; line-height: 34px !important; }
+        .toastui-editor-defaultUI .toastui-editor-tabs .tab-item { height: 34px !important; line-height: 34px !important; padding: 0 16px !important; }
         
-        .toastui-editor-defaultUI .toastui-editor-status-bar {
-            display: none !important;
-        }
-
-        .toastui-editor-defaultUI .ProseMirror h1,
-        .toastui-editor-defaultUI .ProseMirror h2,
-        .toastui-editor-contents h1,
-        .toastui-editor-contents h2 {
-            border-bottom: none !important;
-            padding-bottom: 0 !important;
-        }
-
-        .toastui-editor-defaultUI .ProseMirror,
-        .toastui-editor-contents {
-            min-height: 400px !important;
-        }
-
-        .toastui-editor-defaultUI .toastui-editor-tabs {
-            height: 34px !important; 
-            line-height: 34px !important;
-        }
-        .toastui-editor-defaultUI .toastui-editor-tabs .tab-item {
-            height: 34px !important; 
-            line-height: 34px !important;
-            padding: 0 16px !important; 
-        }
-
-        .toastui-editor-defaultUI,
-        .toastui-editor-defaultUI .toastui-editor-main,
-        .toastui-editor-defaultUI .toastui-editor-ww-container,
-        .toastui-editor-defaultUI .toastui-editor-md-container,
-        .toastui-editor-defaultUI .toastui-editor-md-preview {
-            background-color: #ffffff !important;
-        }
-        .toastui-editor-defaultUI .toastui-editor-toolbar,
-        .toastui-editor-defaultUI .toastui-editor-tabs {
-            background-color: #f9fafb !important;
-            border-bottom-color: #e5e7eb !important;
-        }
+        .toastui-editor-defaultUI, .toastui-editor-defaultUI .toastui-editor-main, .toastui-editor-defaultUI .toastui-editor-ww-container, .toastui-editor-defaultUI .toastui-editor-md-container, .toastui-editor-defaultUI .toastui-editor-md-preview { background-color: #ffffff !important; }
+        .toastui-editor-defaultUI .toastui-editor-toolbar, .toastui-editor-defaultUI .toastui-editor-tabs { background-color: #f9fafb !important; border-bottom-color: #e5e7eb !important; }
+        
+        /* 🚀 COULEUR DYNAMIQUE : Mode Clair */
         .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
             background-color: #ffffff !important;
-            color: {{ $colorLight }} !important;
-        }
-        .toastui-editor-defaultUI .ProseMirror,
-        .toastui-editor-contents {
-            color: #111827 !important;
+            color: var(--brand-primary) !important; 
         }
 
-        .toastui-editor-defaultUI .ProseMirror strong,
-        .toastui-editor-contents strong,
-        .toastui-editor-defaultUI .toastui-editor-md-strong {
-            font-weight: 800 !important;
-            color: #000000 !important;
-        }
+        .toastui-editor-defaultUI .ProseMirror, .toastui-editor-contents { color: #111827 !important; }
+        .toastui-editor-defaultUI .ProseMirror strong, .toastui-editor-contents strong, .toastui-editor-defaultUI .toastui-editor-md-strong { font-weight: 800 !important; color: #000000 !important; }
 
-        .dark .toastui-editor-defaultUI,
-        .dark .toastui-editor-defaultUI .toastui-editor-main,
-        .dark .toastui-editor-defaultUI .toastui-editor-ww-container,
-        .dark .toastui-editor-defaultUI .toastui-editor-md-container,
-        .dark .toastui-editor-dark,
-        .dark .toastui-editor-defaultUI .toastui-editor-md-preview {
-            background-color: #24292e !important; 
-        }
+        /* THEME SOMBRE */
+        .dark .toastui-editor-defaultUI, .dark .toastui-editor-defaultUI .toastui-editor-main, .dark .toastui-editor-defaultUI .toastui-editor-ww-container, .dark .toastui-editor-defaultUI .toastui-editor-md-container, .dark .toastui-editor-dark, .dark .toastui-editor-defaultUI .toastui-editor-md-preview { background-color: #1A1A1A !important; }
+        .dark .toastui-editor-defaultUI .toastui-editor-toolbar { background-color: #0F0F0F !important; border-bottom: 1px solid #2A2A2A !important; }
         
-        .dark .toastui-editor-defaultUI .toastui-editor-toolbar,
-        .dark .toastui-editor-defaultUI .toastui-editor-tabs {
-            background-color: #232428 !important;
-            border-bottom-color: #374151 !important;
-        }
-
-        .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item {
-            color: #64748b !important; 
-            background-color: transparent !important;
-        }
+        .dark .toastui-editor-defaultUI .toastui-editor-tabs { background-color: transparent !important; border-bottom: none !important; margin-bottom: -1px !important; position: relative; z-index: 10; }
+        .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item { color: #8B99A8 !important; background-color: transparent !important; border: none !important; }
+        
+        /* 🚀 COULEUR DYNAMIQUE : Onglet Mode Sombre */
         .dark .toastui-editor-defaultUI .toastui-editor-tabs .tab-item.active {
-            background-color: #24292e !important; 
-            color: {{ $colorDark }} !important;
+            background-color: #1A1A1A !important; 
+            color: var(--brand-primary) !important;
+            border: 1px solid #2A2A2A !important; 
+            border-bottom: 1px solid #1A1A1A !important;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
         }
 
-        .dark .toastui-editor-defaultUI .toastui-editor-md-splitter {
-            background-color: #374151 !important;
-        }
-
-        .dark .toastui-editor-defaultUI .ProseMirror,
-        .dark .toastui-editor-contents {
-            color: #cbd5e1 !important; 
-        }
+        .dark .toastui-editor-defaultUI .toastui-editor-md-splitter { background-color: #2A2A2A !important; }
+        .dark .toastui-editor-defaultUI .ProseMirror, .dark .toastui-editor-contents, .dark .toastui-editor-defaultUI .toastui-editor-md-preview { color: #e2e8f0 !important; }
+        .dark .toastui-editor-defaultUI .ProseMirror h1, .dark .toastui-editor-defaultUI .ProseMirror h2, .dark .toastui-editor-defaultUI .ProseMirror h3, .dark .toastui-editor-defaultUI .ProseMirror h4, .dark .toastui-editor-contents h1, .dark .toastui-editor-contents h2, .dark .toastui-editor-contents h3, .dark .toastui-editor-contents h4, .dark .toastui-editor-defaultUI .toastui-editor-md-heading { color: #ffffff !important; }
+        .dark .toastui-editor-defaultUI .ProseMirror strong, .dark .toastui-editor-contents strong, .dark .toastui-editor-defaultUI .toastui-editor-md-strong { font-weight: 800 !important; color: #ffffff !important; }
         
-        .dark .toastui-editor-defaultUI .ProseMirror h1,
-        .dark .toastui-editor-defaultUI .ProseMirror h2,
-        .dark .toastui-editor-contents h1,
-        .dark .toastui-editor-contents h2 {
-            color: #f8fafc !important; 
+        /* 🚀 COULEUR DYNAMIQUE : Liens Mode Sombre */
+        .dark .toastui-editor-contents a, .dark .toastui-editor-defaultUI .ProseMirror a, .dark .toastui-editor-defaultUI .toastui-editor-md-meta { 
+            color: var(--brand-primary) !important; 
         }
 
-        .dark .toastui-editor-defaultUI .ProseMirror strong,
-        .dark .toastui-editor-contents strong,
-        .dark .toastui-editor-defaultUI .toastui-editor-md-strong {
-            font-weight: 800 !important;
-            color: #ffffff !important;
-        }
+        /* 🚀 COULEUR DYNAMIQUE : Puces des listes */
+        .toastui-editor-defaultUI ul > li::marker, .toastui-editor-contents ul > li::marker { content: "• " !important; color: var(--brand-primary) !important; font-size: 1.2rem !important; }
+        .dark .toastui-editor-defaultUI ul > li::marker, .dark .toastui-editor-contents ul > li::marker { color: var(--brand-primary) !important; }
 
-        .dark .toastui-editor-defaultUI .toastui-editor-md-heading {
-            color: #f8fafc !important; 
-        }
+        .toastui-editor-defaultUI ul ul > li::marker, .toastui-editor-contents ul ul > li::marker { content: "◦ " !important; color: var(--brand-dark) !important; font-size: 1.2rem !important; }
+        .dark .toastui-editor-defaultUI ul ul > li::marker, .dark .toastui-editor-contents ul ul > li::marker { color: var(--brand-dark) !important; }
 
-        .dark .toastui-editor-contents a,
-        .dark .toastui-editor-defaultUI .ProseMirror a,
-        .dark .toastui-editor-defaultUI .toastui-editor-md-meta { 
-            color: {{ $colorDark }} !important; /* <-- Modifié ici */
-        }
+        .toastui-editor-defaultUI ul ul ul > li::marker, .toastui-editor-contents ul ul ul > li::marker { content: "▪ " !important; color: #8B99A8 !important; font-size: 1.1rem !important; }
+        .dark .toastui-editor-defaultUI ul ul ul > li::marker, .dark .toastui-editor-contents ul ul ul > li::marker { color: #8B99A8 !important; }
 
-        .force-tui-split-width {
-            max-width: 80rem !important; 
-        }
+        .force-tui-split-width { max-width: 80rem !important; }
+        .toastui-editor-defaultUI * { scrollbar-width: thin !important; scrollbar-color: #cbd5e1 transparent !important; }
+        .dark .toastui-editor-defaultUI * { scrollbar-color: #2A2A2A transparent !important; }
+        .toastui-editor-defaultUI *::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-track { background: transparent !important; }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb { background-color: #cbd5e1 !important; border-radius: 20px !important; }
+        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover { background-color: #9ca3af !important; }
+        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb { background-color: #2A2A2A !important; }
+        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover { background-color: #8B99A8 !important; }
 
-        .toastui-editor-defaultUI * {
-            scrollbar-width: thin !important;
-            scrollbar-color: #cbd5e1 transparent !important;
-        }
-        .dark .toastui-editor-defaultUI * {
-            scrollbar-color: #4b5563 transparent !important;
-        }
-
-        .toastui-editor-defaultUI *::-webkit-scrollbar {
-            width: 6px !important;
-            height: 6px !important;
-        }
-        .toastui-editor-defaultUI *::-webkit-scrollbar-track {
-            background: transparent !important;
-        }
-        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1 !important;
-            border-radius: 20px !important;
-        }
-        .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover {
-            background-color: #9ca3af !important;
-        }
-
-        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb {
-            background-color: #4b5563 !important;
-        }
-        .dark .toastui-editor-defaultUI *::-webkit-scrollbar-thumb:hover {
-            background-color: #6b7280 !important;
-        }
-
-        .toastui-editor-defaultUI ul > li::marker,
-        .toastui-editor-contents ul > li::marker {
-            content: "• " !important;
-            color: #4f46e5 !important;
-            font-size: 1.2rem !important;
-        }
-        .toastui-editor-defaultUI ul ul > li::marker,
-        .toastui-editor-contents ul ul > li::marker {
-            content: "◦ " !important;
-            color: #0284c7 !important;
-            font-size: 1.2rem !important;
-        }
-        .toastui-editor-defaultUI ul ul ul > li::marker,
-        .toastui-editor-contents ul ul ul > li::marker {
-            content: "▪ " !important;
-            color: #059669 !important;
-            font-size: 1.1rem !important;
-        }
-
-        .dark .toastui-editor-defaultUI ul > li::marker,
-        .dark .toastui-editor-contents ul > li::marker {
-            content: "• " !important;
-            color: #818cf8 !important;
-            font-size: 1.2rem !important;
-        }
-        .dark .toastui-editor-defaultUI ul ul > li::marker,
-        .dark .toastui-editor-contents ul ul > li::marker {
-            content: "◦ " !important;
-            color: #38bdf8 !important;
-            font-size: 1.2rem !important;
-        }
-        .dark .toastui-editor-defaultUI ul ul ul > li::marker,
-        .dark .toastui-editor-contents ul ul ul > li::marker {
-            content: "▪ " !important;
-            color: #34d399 !important;
-            font-size: 1.1rem !important;
-        }
-
-        /* --- Barre de défilement sur mesure pour les tags --- */
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 transparent;
-        }
-        .dark .custom-scrollbar {
-            scrollbar-color: #475569 transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #94a3b8;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569; 
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #64748b; 
-        }
-        /* ASTUCE VISUELLE : Cache les pilules au-delà de la 10ème */
-        #pills-container .tag-btn:nth-child(n+11) {
-            display: none !important;
-        }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .dark .custom-scrollbar { scrollbar-color: #2A2A2A transparent; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #2A2A2A; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #8B99A8; }
+        
+        #pills-container .tag-btn:nth-child(n+11) { display: none !important; }
     </style>
 @endsection
 
 @section('header-extra')
-    <span class="text-gray-300 dark:text-gray-600 mx-2">|</span>
-    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $document ? 'Édition' : 'Création' }}</span>
+    <span class="text-gray-300 dark:text-glossary-border mx-2">|</span>
+    <span class="text-sm text-gray-500 dark:text-glossary-muted">{{ $document ? 'Édition' : 'Création' }}</span>
 @endsection
 
 @section('content')
 <main id="main-wrapper" class="max-w-6xl w-full mx-auto p-6 flex-1 transition-all duration-300">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
+    <div class="bg-white dark:bg-glossary-card rounded-2xl shadow-sm border border-gray-200 dark:border-glossary-border p-6 transition-colors duration-200">
         @if(session('error'))
             <div class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl shadow-sm transition-colors duration-200">
                 <div class="flex">
@@ -299,18 +136,18 @@
                 
                 {{-- Ligne 1 : Les textes (Label à gauche, Auteur à droite) --}}
                 <div class="flex justify-between items-baseline mb-2">
-                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Titre du document</label>
+                    <label class="block text-xs font-semibold text-gray-400 dark:text-glossary-muted uppercase tracking-wider">Titre du document</label>
                 </div>
 
                 {{-- Ligne 2 : Le champ de saisie (prend 100% de la largeur) --}}
                 <input type="text" name="title" value="{{ old('title', $document->title ?? '') }}" 
-                    class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 p-3.5 border text-xl font-bold transition-colors" 
+                    class="w-full bg-white dark:bg-glossary-base border-gray-200 dark:border-glossary-border text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 p-3.5 border text-xl font-bold transition-colors" 
                     placeholder="Nom du fichier...">
                     
             </div>
             {{-- ZONE DES TAGS --}}
             <div class="mb-4">
-                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tags du document</label>
+                <label class="block text-xs font-semibold text-gray-400 dark:text-glossary-muted uppercase tracking-wider mb-2">Tags du document</label>
                 
                 {{-- STOCKAGE SECRET POUR LE FORMULAIRE --}}
                 <div id="hidden-tags-container">
@@ -329,9 +166,9 @@
                                 @php $isActive = in_array($t, $selectedTags); @endphp
                                 
                                 <button type="button" onclick="toggleEditorTag('{{ addslashes($t) }}')" data-tag="{{ $t }}"
-                                   class="tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none {{ $isActive ? 'tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80' : 'tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                                   class="tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none {{ $isActive ? 'tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80' : 'tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-glossary-card dark:border-glossary-border dark:text-gray-300 dark:hover:bg-glossary-base' }}">
                                     
-                                    <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                    <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-glossary-muted' }} mr-1.5">#</span>
                                     {{ $t }}
                                     
                                     @if($isActive)
@@ -345,15 +182,15 @@
                     {{-- 2. Le menu déroulant "Tous les tags" --}}
                     <div class="relative shrink-0 pb-1">
                         {{-- 🚀 LE BOUTON A ÉTÉ MIS À JOUR POUR ÊTRE IDENTIQUE À LA HOME PAGE --}}
-                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 border border-transparent text-gray-600 hover:bg-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:border-gray-700 transition-colors duration-200 focus:outline-none shadow-sm">
+                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 border border-transparent text-gray-600 hover:bg-gray-200 dark:bg-glossary-card dark:text-glossary-muted dark:hover:bg-glossary-base dark:border-glossary-border transition-colors duration-200 focus:outline-none shadow-sm">
                             <svg class="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             Tous les tags
                         </button>
 
-                        <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none overflow-hidden transition-all">
-                            <div class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                        <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-glossary-card shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-glossary-border focus:outline-none overflow-hidden transition-all">
+                            <div class="p-2 border-b border-gray-100 dark:border-glossary-border bg-gray-50 dark:bg-glossary-base">
                                 <input type="text" id="tag-search-input" onkeydown="if(event.key==='Enter') event.preventDefault();" onkeyup="filterDropdownTags(event)" placeholder="Chercher ou créer..." 
-                                       class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
+                                       class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-glossary-border focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-glossary-card">
                             </div>
                             
                             <div class="max-h-60 overflow-y-auto custom-scrollbar py-1" id="tag-dropdown-list">
@@ -361,10 +198,10 @@
                                     @php $isActive = in_array($t, $selectedTags); @endphp
                                     
                                     <button type="button" onclick="toggleEditorTag('{{ addslashes($t) }}')" data-tag="{{ $t }}"
-                                       class="tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm transition-colors focus:outline-none {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                        class="tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm transition-colors focus:outline-none {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-glossary-base' }}">
                                         
                                         <div class="flex items-center">
-                                            <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                            <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-glossary-muted' }} mr-1.5">#</span>
                                             <span class="tag-name">{{ $t }}</span>
                                         </div>
                                         
@@ -381,33 +218,33 @@
 
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
-                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Contenu</label>
+                    <label class="block text-xs font-semibold text-gray-400 dark:text-glossary-muted uppercase tracking-wider">Contenu</label>
                     
-                    <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-700 space-x-1 text-xs transition-colors shadow-inner">
-                        <button type="button" id="btn-view-tags" class="px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm">
+                    <div class="flex bg-gray-100 dark:bg-glossary-base p-1 rounded-xl border border-gray-200 dark:border-glossary-border space-x-1 text-xs transition-colors shadow-inner">
+                        <button type="button" id="btn-view-tags" class="px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-glossary-card text-indigo-600 dark:text-indigo-400 shadow-sm">
                             Balises visibles
                         </button>
-                        <button type="button" id="btn-view-clean" class="px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                        <button type="button" id="btn-view-clean" class="px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-white">
                             Vue épurée
                         </button>
-                        <button type="button" id="btn-view-split" class="px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                        <button type="button" id="btn-view-split" class="px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-white">
                             Écran scindé
                         </button>
                     </div>
                 </div>
 
-                <div id="editor-container" class="bg-white dark:bg-gray-900 rounded-xl"></div>
+                <div id="editor-container" class="bg-white dark:bg-glossary-base rounded-xl"></div>
                 <input type="hidden" id="hidden-content" name="content" value="{{ old('content', $document->content ?? '') }}">
             </div>
 
-            <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-5">
+            <div class="flex justify-between items-center border-t border-gray-100 dark:border-glossary-border pt-5">
                 <div>
                     @if($document && ($document->user_id === Auth::id() || in_array('retd', session('keycloak_groups', []))))
                         <button type="button" onclick="confirmDelete()" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium py-2 px-4 transition">Supprimer</button>
                     @endif
                 </div>
                 <div class="flex space-x-3">
-                    <a href="{{ $cancelUrl }}" class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 px-5 rounded-xl text-sm transition">
+                    <a href="{{ $cancelUrl }}" class="bg-gray-100 dark:bg-glossary-border text-gray-700 dark:text-white py-2.5 px-5 rounded-xl text-sm transition">
                         Annuler
                     </a>
                     <button type="submit" id="btn-submit-form" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-xl shadow-sm transition text-sm">
@@ -502,12 +339,12 @@
             } else {
                 if (isDropdownItem) {
                     // DESIGN MENU DÉROULANT (NON SÉLECTIONNÉ)
-                    btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none';
-                    btn.innerHTML = `<div class="flex items-center"><span class="text-gray-400 dark:text-gray-500 mr-1.5">#</span><span class="tag-name">${tagName}</span></div>`;
+                    btn.className = 'tag-btn tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-glossary-base transition-colors focus:outline-none';
+                    btn.innerHTML = `<div class="flex items-center"><span class="text-gray-400 dark:text-glossary-muted mr-1.5">#</span><span class="tag-name">${tagName}</span></div>`;
                 } else {
                     // DESIGN PILULE HAUT (NON SÉLECTIONNÉ)
-                    btn.className = 'tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700';
-                    btn.innerHTML = `<span class="text-gray-400 dark:text-gray-500 mr-1.5">#</span> ${tagName}`;
+                    btn.className = 'tag-btn shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-glossary-card dark:border-glossary-border dark:text-gray-300 dark:hover:bg-glossary-base';
+                    btn.innerHTML = `<span class="text-gray-400 dark:text-glossary-muted mr-1.5">#</span> ${tagName}`;
                     
                     const container = btn.parentNode;
                     container.appendChild(btn);
@@ -592,7 +429,7 @@
 
         function resetButtons() {
             [btnTags, btnClean, btnSplit].forEach(btn => {
-                btn.className = "px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300";
+                btn.className = "px-3 py-1.5 rounded-lg font-semibold transition text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-white";
                 btn.style.color = '';
             });
         }
@@ -610,8 +447,8 @@
 
         btnTags.addEventListener('click', function() {
             resetButtons();
-            btnTags.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            btnTags.style.color = '{{ $colorLight }}'; 
+            btnTags.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-glossary-card shadow-sm";
+            btnTags.style.color = 'var(--brand-primary)'; // 🚀 Corrigé ici
             
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
@@ -621,8 +458,8 @@
 
         btnClean.addEventListener('click', function() {
             resetButtons();
-            btnClean.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            btnClean.style.color = '{{ $colorLight }}'; 
+            btnClean.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-glossary-card shadow-sm";
+            btnClean.style.color = 'var(--brand-primary)'; // 🚀 Corrigé ici
             
             mainWrapper.classList.remove('force-tui-split-width');
             editor.setHeight('auto'); 
@@ -631,8 +468,8 @@
 
         btnSplit.addEventListener('click', function() {
             resetButtons();
-            btnSplit.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-gray-700 shadow-sm";
-            btnSplit.style.color = '{{ $colorLight }}'; 
+            btnSplit.className = "px-3 py-1.5 rounded-lg font-semibold transition bg-white dark:bg-glossary-card shadow-sm";
+            btnSplit.style.color = 'var(--brand-primary)'; // 🚀 Corrigé ici
             
             mainWrapper.classList.add('force-tui-split-width');
             editor.changeMode('markdown');
@@ -656,8 +493,10 @@
             if (editorUI) {
                 if (isDarkTheme) {
                     editorUI.classList.add('toastui-editor-dark');
+                    editor.setTheme('dark'); // Applique aussi le thème officiel TUI
                 } else {
                     editorUI.classList.remove('toastui-editor-dark');
+                    editor.setTheme('light');
                 }
             }
         });

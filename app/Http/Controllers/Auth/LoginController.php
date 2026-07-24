@@ -124,8 +124,8 @@ class LoginController extends Controller
 
             \Illuminate\Support\Facades\Auth::login($user);
 
-            // 🚀 REDIRECTION FINALE EXPLICITE
-            $redirectUrl = !empty($requestedGroup) ? '/direct-home/' . $requestedGroup : '/home';
+            // 🚀 REDIRECTION FINALE EXPLICITE (Mise à jour avec le nouveau format)
+            $redirectUrl = !empty($requestedGroup) ? '/home?environnement=' . $requestedGroup : '/home';
             
             // On te redirige et on détruit le cookie devenu inutile
             return redirect($redirectUrl)->withCookie(cookie()->forget('intended_group'));

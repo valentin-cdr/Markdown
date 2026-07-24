@@ -21,13 +21,25 @@ Route::get('/direct-home/{group}', [HomeController::class, 'index'])->name('dire
 
 // 2. La route interne pour le menu déroulant du Projet B
 Route::get('/switch-environment/{group}', function ($group) {
-    session(['forced_group_key' => $group]);
-    session(['active_group_key' => $group]);
-    
-    $groupeModel = \App\Models\Group::where('key', $group)->first() ?? \App\Models\Group::where('slug', $group)->first();
-    if ($groupeModel) {
-        session(['simulated_group_id' => $groupeModel->id]);
-        session(['simulated_franchise_id' => $groupeModel->id]);
+    if ($group === 'retd' || $group === 'global') {
+        // 🚀 SI C'EST LE RÉSEAU GLOBAL : On force 'retd' dans toutes les clés de session
+        session(['forced_group_key' => 'retd']);
+        session(['active_group_key' => 'retd']);
+        session(['admin_forced_group' => 'retd']);
+        session()->forget('simulated_group_id');
+        session()->forget('simulated_franchise_id');
+    } else {
+        // 🔍 SINON : On cherche le vrai groupe dans la BDD
+        $groupeModel = \App\Models\Group::where('key', $group)->first() ?? \App\Models\Group::where('slug', $group)->first();
+        
+        if ($groupeModel) {
+            $trueKey = $groupeModel->key;
+            session(['forced_group_key' => $trueKey]);
+            session(['active_group_key' => $trueKey]);
+            session(['admin_forced_group' => $trueKey]);
+            session(['simulated_group_id' => $groupeModel->id]);
+            session(['simulated_franchise_id' => $groupeModel->id]);
+        }
     }
     
     session()->save();

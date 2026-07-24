@@ -13,6 +13,34 @@ class HomeController extends Controller
 {
     public function index(Request $request, $group = null)
     {
+        // 🚀 NOUVEAU : On écoute le paramètre d'URL (?environnement=) ou l'ancien paramètre de route
+        $requestedGroup = $request->query('environnement') ?? $group;
+
+        // 🚀 1. LE SAS DE REDIRECTION INVISIBLE
+        if ($requestedGroup) {
+            
+            // 🔍 TRADUCTION : On cherche le vrai groupe en base (soit par sa clé, soit par son slug)
+            $groupeModel = \App\Models\Group::where('key', $requestedGroup)->first() 
+                        ?? \App\Models\Group::where('slug', $requestedGroup)->first();
+            
+            if ($groupeModel) {
+                // On utilise TOUJOURS la "key" officielle pour la session
+                $trueKey = $groupeModel->key; 
+                
+                session(['active_group_key' => $trueKey]);
+                session(['forced_group_key' => $trueKey]);
+                session(['admin_forced_group' => $trueKey]);
+                session(['simulated_group_id' => $groupeModel->id]); 
+                session(['simulated_franchise_id' => $groupeModel->id]);
+            } else {
+                // Optionnel : on force le retour au global si l'environnement envoyé n'existe pas
+                session(['active_group_key' => 'retd']);
+            }
+            session()->save();
+
+            // MAGIE : On te redirige immédiatement vers la vraie page Home !
+            return redirect()->route('home');
+        }
         // 🚀 1. LE SAS DE REDIRECTION INVISIBLE (S'exécute quand tu cliques sur le bouton du Projet A)
         if ($group) {
             // On mémorise la demande en session

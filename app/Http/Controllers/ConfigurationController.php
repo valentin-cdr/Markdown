@@ -104,24 +104,28 @@ class ConfigurationController extends Controller
         return redirect()->back()->with('success', 'Groupe supprimé de l\'application.');
     }
 
-    public function switchGroup($key = null)
+   public function switchGroup($key = null)
     {
-        // 1. SÉCURITÉ : Seuls les admins du groupe 'retd' ont le droit
         if (!in_array('retd', session('keycloak_groups', []))) {
             abort(403, 'Accès refusé.');
         }
 
-        // 2. LE DÉTECTEUR 🕵️‍♂️ : On attrape la clé, peu importe où elle se cache !
         $finalKey = $key ?? request('group') ?? request('key');
 
-        // 3. ENREGISTREMENT
-        if (empty($finalKey) || $finalKey === 'global') {
-            // Si c'est vide ou 'global', on nettoie la session (Retour à R&D)
-            session()->forget('admin_forced_group');
+        // Si on demande global ou retd, on enregistre explicitement 'retd'
+        if (empty($finalKey) || $finalKey === 'global' || $finalKey === 'retd') {
+            $targetKey = 'retd';
         } else {
-            // Sinon, on mémorise le bon environnement
-            session(['admin_forced_group' => $finalKey]);
+            $targetKey = $finalKey;
         }
+
+        session([
+            'admin_forced_group' => $targetKey,
+            'active_group_key'   => $targetKey,
+            'forced_group_key'   => $targetKey
+        ]);
+
+        session()->save();
 
         return redirect()->back();
     }

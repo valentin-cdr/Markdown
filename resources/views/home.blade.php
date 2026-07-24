@@ -10,7 +10,7 @@
         scrollbar-color: #cbd5e1 transparent;
     }
     .dark .custom-scrollbar {
-        scrollbar-color: #475569 transparent;
+        scrollbar-color: #2A2A2A transparent; /* Modifié avec la bordure sombre */
     }
     .custom-scrollbar::-webkit-scrollbar {
         height: 6px;
@@ -27,10 +27,10 @@
         background-color: #94a3b8;
     }
     .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: #475569; 
+        background-color: #2A2A2A; 
     }
     .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: #64748b; 
+        background-color: #8B99A8; 
     }
 </style>
 @endsection
@@ -100,19 +100,19 @@
 
                 <div class="relative flex items-center">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-4 w-4 text-gray-400 dark:text-glossary-muted" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                         </svg>
                     </div>
                     
                     <input type="text" id="search-input" name="search" value="{{ $search ?? '' }}" 
-                           class="block w-full h-10 pl-9 pr-10 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors shadow-sm" 
+                           class="block w-full h-10 pl-9 pr-10 border border-gray-200 dark:border-glossary-border rounded-xl leading-5 bg-white dark:bg-glossary-card text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-glossary-muted focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors shadow-sm" 
                            placeholder="{{ ($tab === 'all' && empty($selectedFolder)) ? 'Rechercher un dossier...' : 'Rechercher un document...' }}">
 
                     @if(!empty($search))
                         <button type="button" 
                                 onclick="document.getElementById('search-input').value=''; document.getElementById('search-form').submit();" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors focus:outline-none"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-glossary-muted hover:text-red-500 dark:hover:text-red-400 transition-colors focus:outline-none"
                                 title="Effacer la recherche">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -131,27 +131,27 @@
         </div>
     </div>
 
-    <div class="border-b border-gray-200 dark:border-gray-700 mb-8 transition-colors duration-200">
+    <div class="border-b border-gray-200 dark:border-glossary-border mb-8 transition-colors duration-200">
         <nav class="-mb-px flex space-x-8 overflow-x-auto custom-scrollbar">
             
             @if($showMyDocuments)
-                <a href="{{ route('home', ['tab' => 'my_documents']) }}" class="{{ $tab === 'my_documents' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
+                <a href="{{ route('home', ['tab' => 'my_documents']) }}" class="{{ $tab === 'my_documents' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
                     Mes documents
                 </a>
             @endif
 
             @if($groupName)
-                <a href="{{ route('home', ['tab' => 'group_documents']) }}" class="{{ $tab === 'group_documents' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
+                <a href="{{ route('home', ['tab' => 'group_documents']) }}" class="{{ $tab === 'group_documents' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
                     Documents {!! $groupName !!}
                 </a>
             @endif
 
-            <a href="{{ route('home', ['tab' => 'shared']) }}" class="{{ $tab === 'shared' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
+            <a href="{{ route('home', ['tab' => 'shared']) }}" class="{{ $tab === 'shared' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
                 Partagés avec moi
             </a>
             
             @if($isAdmin)
-                <a href="{{ route('home', ['tab' => 'all']) }}" class="{{ $tab === 'all' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
+                <a href="{{ route('home', ['tab' => 'all']) }}" class="{{ $tab === 'all' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-glossary-muted hover:text-gray-700 dark:hover:text-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
                     Tous les documents (Global)
                 </a>
             @endif
@@ -173,7 +173,7 @@
     @if($tab === 'all' && !empty($selectedFolder))
         <div class="mb-4 mt-2 flex items-center space-x-4 animate-fade-in-down">
             <a href="{{ route('home', ['tab' => 'all']) }}" 
-               class="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm transition-all hover:-translate-x-1" title="Retour aux dossiers">
+               class="p-2.5 bg-white dark:bg-glossary-card border border-gray-200 dark:border-glossary-border rounded-xl text-gray-500 dark:text-glossary-muted hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm transition-all hover:-translate-x-1" title="Retour aux dossiers">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -203,9 +203,9 @@
                             @endphp
                             
                             <a href="{{ route('home', $routeParams) }}" 
-                               class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none {{ $isActive ? 'tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80' : 'tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                               class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors duration-200 focus:outline-none {{ $isActive ? 'tag-selected bg-indigo-100 border-indigo-200 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:border-indigo-700/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80' : 'tag-suggested bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-glossary-card dark:border-glossary-border dark:text-gray-300 dark:hover:bg-glossary-base' }}">
                                 
-                                <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-glossary-muted' }} mr-1.5">#</span>
                                 {{ $t }}
                                 
                                 @if($isActive)
@@ -220,15 +220,15 @@
 
                 @if(count($allTags) > 10)
                     <div class="relative shrink-0 ml-1">
-                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 border border-transparent text-gray-600 hover:bg-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-gray-800 dark:border-gray-700 transition-colors duration-200 focus:outline-none shadow-sm">
+                        <button type="button" onclick="toggleTagDropdown()" class="shrink-0 whitespace-nowrap inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 border border-transparent text-gray-600 hover:bg-gray-200 dark:bg-glossary-card dark:text-glossary-muted dark:hover:bg-glossary-base transition-colors duration-200 focus:outline-none shadow-sm">
                             <svg class="w-3.5 h-3.5 mr-1.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             Tous les tags
                         </button>
                         
-                        <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none overflow-hidden transition-all">
-                            <div class="p-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                        <div id="tag-dropdown-menu" class="hidden absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-glossary-card shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-glossary-border focus:outline-none overflow-hidden transition-all">
+                            <div class="p-2 border-b border-gray-100 dark:border-glossary-border bg-gray-50 dark:bg-glossary-base">
                                 <input type="text" id="tag-search-input" onkeyup="filterDropdownTags()" placeholder="Chercher un tag..." 
-                                    class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700">
+                                    class="block w-full rounded-lg border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-glossary-border focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-glossary-card">
                             </div>
                             
                             <div class="max-h-60 overflow-y-auto custom-scrollbar py-1" id="tag-dropdown-list">
@@ -242,9 +242,9 @@
                                     @endphp
                                     
                                     <a href="{{ route('home', $routeParams) }}" 
-                                    class="tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm transition-colors focus:outline-none {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                                    class="tag-dropdown-item w-full flex items-center justify-between px-4 py-2 text-sm transition-colors focus:outline-none {{ $isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 font-semibold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-glossary-base' }}">
                                         <div class="flex items-center">
-                                            <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-gray-500' }} mr-1.5">#</span>
+                                            <span class="{{ $isActive ? 'text-indigo-400 dark:text-indigo-500' : 'text-gray-400 dark:text-glossary-muted' }} mr-1.5">#</span>
                                             <span class="tag-name">{{ $t }}</span>
                                         </div>
                                         @if($isActive)
@@ -271,12 +271,12 @@
     @endphp
 
     @if($isPageEmpty)
-        <div class="text-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-16 shadow-sm transition-colors duration-200">
+        <div class="text-center bg-white dark:bg-glossary-card border border-gray-200 dark:border-glossary-border rounded-2xl p-16 shadow-sm transition-colors duration-200">
             @if(!empty($search) || !empty($selectedTags))
-                <p class="text-gray-500 dark:text-gray-400">Aucun résultat trouvé pour cette recherche ou ces filtres.</p>
+                <p class="text-gray-500 dark:text-glossary-muted">Aucun résultat trouvé pour cette recherche ou ces filtres.</p>
                 <a href="{{ route('home', ['tab' => $tab, 'folder' => $selectedFolder ?? null]) }}" class="text-indigo-500 hover:underline mt-2 inline-block text-sm">Effacer les filtres</a>
             @else
-                <p class="text-gray-500 dark:text-gray-400">Aucun document dans cet onglet.</p>
+                <p class="text-gray-500 dark:text-glossary-muted">Aucun document dans cet onglet.</p>
             @endif
         </div>
     @else
@@ -301,13 +301,13 @@
 
                 @foreach($documents as $groupName => $groupDocs)
                     <a href="{{ route('home', ['tab' => 'all', 'folder' => $groupName]) }}" 
-                        class="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 flex items-center space-x-4 cursor-pointer">
+                        class="group bg-white dark:bg-glossary-card border border-gray-200 dark:border-glossary-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 flex items-center space-x-4 cursor-pointer">
                         <div class="p-3 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 dark:text-indigo-400 rounded-xl group-hover:scale-110 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/60 transition-all">
                             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h3 class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $groupName }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $groupDocs->count() }} document(s)</p>
+                            <p class="text-xs text-gray-500 dark:text-glossary-muted mt-0.5">{{ $groupDocs->count() }} document(s)</p>
                         </div>
                     </a>
                 @endforeach
@@ -317,10 +317,10 @@
         @else
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                 @foreach($documents as $doc)
-                    <div class="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
+                    <div class="relative bg-white dark:bg-glossary-card border border-gray-200 dark:border-glossary-border rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-48">
                         
                         @if($tab === 'all')
-                            <span class="absolute top-4 right-5 text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900/40 px-2 py-0.5 rounded-md border border-gray-100 dark:border-gray-800">
+                            <span class="absolute top-4 right-5 text-[11px] font-medium text-gray-400 dark:text-glossary-muted bg-gray-50 dark:bg-glossary-base px-2 py-0.5 rounded-md border border-gray-100 dark:border-glossary-border">
                                 Par : <strong class="text-gray-600 dark:text-gray-300 font-semibold">{{ $doc->user->username ?? 'Inconnu' }}</strong>
                             </span>
                         @endif
@@ -344,18 +344,18 @@
                                     @endforeach
                                     
                                     @if($hiddenCount > 0)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 cursor-default">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-glossary-border text-gray-500 dark:text-glossary-muted border border-gray-200 dark:border-glossary-border cursor-default">
                                             +{{ $hiddenCount }}
                                         </span>
                                     @endif
                                 </div>
                             @endif
-                            <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mt-2 transition-colors duration-200">{{ $doc->clean_preview }}</p>
+                            <p class="text-sm text-gray-500 dark:text-glossary-muted line-clamp-3 mt-2 transition-colors duration-200">{{ $doc->clean_preview }}</p>
                         </div>
                         
-                        <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3 mt-auto transition-colors duration-200">
+                        <div class="flex justify-between items-center border-t border-gray-100 dark:border-glossary-border pt-3 mt-auto transition-colors duration-200">
                             
-                            <span class="text-xs text-gray-400">{{ $doc->updated_at->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400 dark:text-glossary-muted">{{ $doc->updated_at->diffForHumans() }}</span>
                             
                             <div class="flex items-center space-x-3">
                                 @if(isset($doc->shared_with_count) && $doc->shared_with_count > 0)
@@ -370,7 +370,7 @@
                                 {{-- 🚀 CORRECTION 2 : Affichage intelligent des boutons --}}
                                 @if($tab === 'my_documents')
                                     <div class="flex items-center gap-2">
-                                        <a href="{{ route('documents.share.form', $doc->id) }}" title="Partager" class="p-1.5 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition flex items-center justify-center">
+                                        <a href="{{ route('documents.share.form', $doc->id) }}" title="Partager" class="p-1.5 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-glossary-border hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition flex items-center justify-center">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                                         </a>
                                         <a href="{{ route('documents.show', $doc->id) }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 py-1.5 px-3 rounded-lg transition flex items-center">Consulter</a>
@@ -378,7 +378,7 @@
                                     </div>
                                 @else
                                     @if($tab === 'shared')
-                                        <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
+                                        <span class="text-xs text-gray-500 dark:text-glossary-muted flex items-center whitespace-nowrap">
                                             De : <strong class="ml-1 text-gray-700 dark:text-gray-300 font-medium">{{ $doc->user->username ?? 'Inconnu' }}</strong>
                                         </span>
                                     @endif
